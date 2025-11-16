@@ -1,0 +1,45 @@
+{% extends "account/Layout/base_simple.html" %}
+{% load i18n %}
+{% load account %}
+{% load allauth %}
+
+{% block head_title %}
+  Confirmar el correo
+{% endblock %}
+
+{% block content_account %}
+  
+  <h1 class="max-w-2xl font-bold tracking-tight text-gray-900 text-2xl mb-4">Confirmar el correo</h1>
+
+  {% if confirmation %}
+    <div class="space-y-6">
+      {% user_display confirmation.email_address.user as user_display %}
+
+      {% if can_confirm %}
+        <p class="max-w-2xl text-gray-900 pt-6">
+          {% blocktrans with confirmation.email_address.email as email %}Por favor confirme su correo <a class="text-indigo-600" href="mailto:{{ email }}">{{ email }}</a> Es una dirección de correo electrónico para el usuario {{ user_display }}.{% endblocktrans %}
+        </p>
+
+        {% url 'account_confirm_email' confirmation.key as action_url %}
+        {% element form method='post' action=action_url %}
+          {% slot actions %}
+            {% csrf_token %}
+            {{ redirect_field }}
+            {% include "components/btn/button_size.html" with button_name="confirm" button_type="buttom" button_text="Confirmar" %}
+          {% endslot %}
+        {% endelement %}
+      {% else %}
+        <p class="max-w-2xl text-gray-900 pt-6">
+          {% blocktrans %}Unable to confirm {{ email }} because it is already confirmed by a different account.{% endblocktrans %}
+        </p>
+      {% endif %}
+  {% else %}
+      {% url 'account_email' as email_url %}
+      <p class="max-w-2xl text-gray-900 pt-6">
+        Este enlace de confirmación por correo electrónico expiró o no es válido. Por favor <a class="text-indigo-600" href="{{ email_url }}">emitir una nueva solicitud de confirmación por correo electrónico</a>.
+      </p>
+    </div>
+  {% endif %}
+
+
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'components/Layout/base_extendido.html' %}
+
+{% block content_main %}
+<section class="space-y-6 text-white">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <p class="text-sm font-semibold text-indigo-300 uppercase tracking-wide">Módulo clínico</p>
+      <h1 class="text-3xl font-bold text-white">Pacientes</h1>
+      <p class="text-sm text-gray-400">Administra la información de pacientes y accede rápidamente a sus casos clínicos.</p>
+    </div>
+    <a href="{% url 'clinica:paciente_create' %}" class="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+      <span class="text-lg leading-none">+</span>
+      Nuevo paciente
+    </a>
+  </div>
+
+  <div class="rounded-[2.5rem] border border-white/10 bg-gray-950/40 p-1 shadow-2xl shadow-black/30">
+    <div class="overflow-x-auto rounded-[2rem]">
+      <div class="overflow-hidden rounded-[2rem]">
+      <table aria-label="Pacientes" class="w-full whitespace-nowrap text-left text-sm text-gray-300">
+        <colgroup>
+          <col class="w-full sm:w-4/12">
+          <col class="sm:w-2/12">
+          <col class="sm:w-2/12">
+          <col class="sm:w-2/12">
+          <col class="sm:w-2/12">
+        </colgroup>
+        <thead class="border-b border-white/10 text-xs font-semibold uppercase tracking-wide text-gray-400">
+          <tr>
+            <th scope="col" class="py-3 pl-6 pr-8 sm:pl-8">Paciente</th>
+            <th scope="col" class="px-6 py-3">RUT</th>
+            <th scope="col" class="px-6 py-3">Teléfono</th>
+            <th scope="col" class="px-6 py-3">Estado</th>
+            <th scope="col" class="py-3 pl-6 pr-6 text-right sm:pr-8">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5 text-sm leading-6">
+          {% for paciente in pacientes %}
+            <tr class="transition hover:bg-white/5">
+              <td class="py-4 pl-6 pr-8 sm:pl-8">
+                <div class="flex flex-col gap-1">
+                  <p class="text-base font-semibold text-white">{{ paciente.nombre_completo }}</p>
+                  <p class="text-xs text-gray-400">{{ paciente.get_sexo_display }} · {{ paciente.fecha_nacimiento|date:"d/m/Y" }}</p>
+                  <p class="text-xs text-gray-500">{{ paciente.email|default:"Sin correo registrado" }}</p>
+                </div>
+              </td>
+              <td class="px-6 py-4 font-mono text-sm text-gray-200">{{ paciente.rut }}</td>
+              <td class="px-6 py-4 text-sm text-gray-200">{{ paciente.telefono|default:"Sin teléfono" }}</td>
+              <td class="px-6 py-4">
+                {% if paciente.activo %}
+                  <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                    <span class="h-2 w-2 rounded-full bg-emerald-400"></span> Activo
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center gap-2 rounded-full bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300">
+                    <span class="h-2 w-2 rounded-full bg-rose-400"></span> Inactivo
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-4 pl-6 pr-6 text-right text-sm font-semibold sm:pr-8">
+                <div class="flex justify-end gap-4 text-indigo-300">
+                  <a href="{% url 'clinica:paciente_detail' paciente.pk %}" class="hover:text-white">Ver ficha</a>
+                  <a href="{% url 'clinica:paciente_update' paciente.pk %}" class="text-gray-400 hover:text-white">Editar</a>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-400">
+                No hay pacientes registrados. <a href="{% url 'clinica:paciente_create' %}" class="text-indigo-300 underline-offset-4 hover:text-indigo-200 hover:underline">Crea el primero</a>.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    {% include 'components/paginador.html' with page_obj=page_obj %}
+  </div>
+
+  {% include 'components/mensajes.html' %}
+</section>
+{% endblock content_main %}

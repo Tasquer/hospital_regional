@@ -1,0 +1,35 @@
+{% extends "account/Layout/base_simple.html" %}
+{% load tailwind_filters %}
+{% load i18n %}
+{% load allauth %}
+{% block head_title %}
+    {% trans "Sign In" %}
+{% endblock head_title %}
+
+{% block content_account %}
+
+  <div class="space-y-6">
+    <p class="max-w-2xl text-gray-900 pt-6">
+        {% blocktranslate %}Your account is protected by two-factor authentication. Please enter an authenticator code:{% endblocktranslate %}
+    </p>
+
+    {% url 'mfa_authenticate' as action_url %}
+    {% element form form=form method="post" action=action_url %}
+      {% slot body %}
+        {% csrf_token %}
+        {{ form|crispy }}
+      {% endslot %}
+      {% slot actions %}
+        <div class="flex justify-between">  
+          {% include "components/btn/button_size.html" with button_text="Registrarse" button_class="primary mfa login" %}              
+
+          {% url "account_login" as login_url %}
+          {% include "components/btn/ancor_btn.html" with ancor_link=login_url button_text="Cancelar" button_class="link,secondary,mfa,cancel" %}
+
+        </div>
+      {% endslot %}
+    {% endelement %}
+
+  </div>
+
+{% endblock content_account %}

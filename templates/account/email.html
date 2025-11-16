@@ -1,0 +1,93 @@
+{% extends "account/Layout/base_simple.html" %}
+{% load tailwind_filters %}
+{% load allauth i18n %}
+
+{% block head_title %}
+  {% trans 'E-mail Addresses' %}
+{% endblock %}
+
+{% block content %}
+
+  <h1 class="max-w-2xl font-bold tracking-tight text-gray-900 text-2xl mb-4">{% trans 'E-mail Addresses' %}</h1>
+
+  {% if emailaddresses %}
+    <p class="max-w-2xl text-gray-900 pt-6 pb-3">Las siguientes direcciones de correo electrónico están asociadas con su cuenta :</p>
+
+    {% url 'account_email' as email_url %}
+
+    {% element form form=form action=email_url method='post' %}
+      {% slot body %}
+        {% csrf_token %}
+        {% for radio in emailaddress_radios %}
+          {% with emailaddress=radio.emailaddress %}
+            {% element field type='radio' checked=radio.checked name='email' value=emailaddress.email id=radio.id %}
+              {% slot label %}
+                {{ emailaddress.email }}
+                <div class="flex gap-4">
+                  {% if emailaddress.verified %}
+                    {% element badge tags='success,email,verified' %}
+                      <span class="verified font-bold">{% translate 'Verified' %}</span>
+                    {% endelement %}
+                  {% else %}
+                    {% element badge tags='warning,email,unverified' %}
+                      <span class="unverified font-bold">{% translate 'Unverified' %}</span>
+                    {% endelement %}
+                  {% endif %}  
+                  {% if emailaddress.primary %}
+                    {% element badge tags='email,primary' %}
+                      <span class="unverified font-bold">{% translate 'Primary' %}</span>
+                    {% endelement %}
+                  {% endif %}
+                </div>  
+              {% endslot %}
+            {% endelement %}
+          {% endwith %}
+        {% endfor %}
+      {% endslot %}
+      {% slot actions %}
+        <div class="buttonHolder flex gap-2 py-3">
+
+          {% include "components/btn/button.html" with button_name="action_primary" button_text="Hacer primario" %}
+          {% include "components/btn/button.html" with button_name="action_send" button_text="Reenviar verificación" button_class="secondary" %}
+          {% include "components/btn/button.html" with button_name="action_remove" button_text="Eliminar" button_class="danger delete" %}
+
+        </div>
+      {% endslot %}
+    {% endelement %}
+  {% else %}
+    {% include 'account/snippets/warn_no_email.html' %}
+  {% endif %}
+  {% if can_add_email %}
+    <h2 class="max-w-xs text-3xl font-bold tracking-tight text-gray-900 sm:text-2xl mb-4">{% trans 'Add Email Address' %}</h2>
+
+    {% url 'account_email' as action_url %}
+
+    {% element form form=form method='post' action=action_url %}
+      {% slot body %}
+        {% csrf_token %}
+        {{ form|crispy }}
+      {% endslot %}
+      befac
+      {% slot actions %}
+        {% include "components/btn/button.html" with button_name="action_add" button_text="Agregar email" button_type="submit" button_class="" %}
+      {% endslot %}
+    {% endelement %}
+  {% endif %}
+
+{% endblock %}
+
+{% block javascript %}
+  <script type="text/javascript">
+    (function () {
+      let message= "{% trans 'Do you really want to remove the selected e-mail address?' %}"
+      let actions= document.getElementsByName('action_remove')
+      if (actions.length) {
+        actions[0].addEventListener('click', function (e) {
+          if (!confirm(message)) {
+            e.preventDefault()
+          }
+        })
+      }
+    })()
+  </script>
+{% endblock %}

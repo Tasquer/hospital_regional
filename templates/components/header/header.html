@@ -1,0 +1,16 @@
+<div class="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
+
+  <div class="relative flex flex-1" >
+    {% if request.path == '/reporte/lista/' or request.path == '/usuarios/' or request.path == '/reporte/tabla_fechas/' or request.path == '/proyectos/' or request.path == '/proyectos/extension/' or request.path == '/proyectos/extension/notificaciones/' or request.path == '/proyectos/cupos_proyecto/' or request.path ==  '/proyectos/extension_proyecto/' %}
+        {% include "components/header/components/buscador.html" %}
+    {% endif %}
+  </div>
+
+  <div class="flex items-center gap-x-4 lg:gap-x-6">
+    <!-- Separator -->
+    <div class="hidden lg:block lg:h-6 lg:w-pxlg:bg-gray-900/10" aria-hidden="true"></div>
+
+    <!-- Profile dropdown -->
+    {% include 'components/header/components/profile.html' %}
+  </div>
+</div>

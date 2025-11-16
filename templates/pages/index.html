@@ -1,0 +1,97 @@
+{% extends 'components/Layout/base_extendido.html' %}
+{% load static %}   
+{% load humanize %}
+
+{% block content_main %} 
+          
+  <div class="sm:h-dvh">
+      <h2 class=" text-zinc-400 text-center pb-3 text-2xl" >Grafico Ejemplo</h2>
+      <div class="w-full h-[600px]" id="chart_home">
+  </div>
+
+  <!-- Activity list -->
+  <div class="border-t border-white/10 pt-11">
+    <h2 class="px-4 text-base font-semibold leading-7 text-white sm:px-6 lg:px-8">Últimos usuarios conectados</h2>
+    <table aria-labelledby="tablaUsuarios" aria-describedby="tablaUsuariosConectados" class="mt-6 w-full whitespace-nowrap text-left">
+      <colgroup>
+        <col class="w-full sm:w-4/12">
+        <col class="lg:w-4/12">
+        <col class="lg:w-2/12">
+        <col class="lg:w-1/12">
+        <col class="lg:w-1/12">
+      </colgroup>
+      <thead class="border-b border-white/10 text-sm leading-6 text-white">
+        <tr>
+          <th scope="col" class="py-2 pl-4 pr-8 font-semibold sm:pl-6 lg:pl-8">Usuario</th>
+          <th scope="col" class="hidden py-2 pl-0 pr-8 font-semibold sm:table-cell">Correo</th>
+          <th scope="col" class="hidden py-2 pl-0 pr-4 text-right font-semibold sm:pr-8 sm:text-left lg:pr-20 sm:table-cell">Cargo</th>
+          <th scope="col" class="py-2 pl-0 pr-4 text-right font-semibold sm:pr-6 lg:pr-8">Última conexión</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+
+        {% if object_list  %}
+          {% for user in object_list  %}
+          
+            <tr>
+              <td class="py-4 pl-4 pr-8 sm:pl-6 lg:pl-8">
+                <div class="flex items-center gap-x-4">
+                  <img src="{{ user.profile.image.url }}" alt="perfil" class="h-8 w-8 rounded-full bg-gray-800">
+                  <div class="truncate text-sm font-medium leading-6 text-white">{{ user.username }}</div>
+                </div>
+              </td>
+              <td class="hidden py-4 pl-0 pr-4 sm:table-cell sm:pr-8">
+                <div class="flex gap-x-3">
+                  <div class="font-mono text-sm leading-6 text-gray-400">{{ user.email }}</div>
+                </div>
+              </td>
+              <td class="hidden py-4 pl-0 pr-4 text-sm leading-6 sm:pr-8 lg:pr-20 sm:table-cell">
+
+                <div class="flex items-center justify-end gap-x-2 sm:justify-start">
+                  <div class="hidden text-white sm:block">
+                    {% if user.profile.position_FK.permission_code != "RESTRICTED" %}
+                      <span class="inline-flex flex-shrink-0 items-center rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                        {{ user.profile.position_FK.user_position }}
+                      </span>
+                    {% else %}
+                      <span class="inline-flex flex-shrink-0 items-center rounded-full bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-green-600/20">
+                          {{ user.profile.position_FK.user_position }}
+                      </span> 
+                    {% endif %}
+                  </div>
+                </div>
+
+              </td>
+              <td class="py-4 pl-0 pr-4 text-right text-sm leading-6 text-gray-400 sm:pr-6 lg:pr-8">
+              
+                  {% if user.id in active_users %}
+                    <div class="flex items-center justify-end gap-x-2 sm:justify-end">
+                    <div class="flex-none rounded-full p-1 text-green-400 bg-green-400/10">
+                      <div class="h-1.5 w-1.5 rounded-full bg-current"></div>
+                    </div>
+                    <div class=" text-white ">Activo</div>
+                  </div>
+                  {% else %}
+                      {{ user.profile.last_activity|naturaltime }}
+                  {% endif %}
+            
+              </td>
+            </tr>
+            
+          {% endfor %} 
+        {% endif %} 
+
+      </tbody>
+    </table>
+  </div>
+
+  {% include 'components/mensajes.html' %}
+
+{% endblock content_main %}
+
+{% block javascript %}
+
+  <script defer src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"></script>
+  <script defer src="{% static 'js/grafico_home.js' %}"></script>
+
+{% endblock javascript %}

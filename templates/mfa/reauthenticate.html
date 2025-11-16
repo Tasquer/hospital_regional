@@ -1,0 +1,21 @@
+{% extends "account/base_reauthenticate.html" %}
+{% load i18n %}
+{% load allauth %}
+
+{% block reauthenticate_content %}
+
+    <p class="mb-3">{% blocktranslate %}Enter an authenticator code:{% endblocktranslate %}</p>
+    {% url 'mfa_reauthenticate' as action_url %}
+    {% element form form=form method="post" action=action_url %}
+      {% slot body %}
+        {% csrf_token %}
+        {% element fields form=form unlabeled=True %}
+        {% endelement %}
+        {{ redirect_field }}
+      {% endslot %}
+      {% slot actions %}
+          {% include "components/btn/button_size.html" with button_text="Corfirmar" button_class="primary mfa login" %}
+      {% endslot %}
+    {% endelement %}
+
+{% endblock %}

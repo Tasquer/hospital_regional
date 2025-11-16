@@ -1,0 +1,50 @@
+{% extends "account/Layout/base_account.html" %}
+{% load i18n %}
+{% load allauth %}
+
+
+{% block head_title %}
+    {% trans "Recovery Codes" %}
+{% endblock head_title %}
+
+{% block content_account %}
+
+  <h1 class="max-w-2xl font-bold tracking-tight text-gray-900 text-2xl mb-4">Códigos de Recuperación</h1>
+  <div class="space-y-6">
+    <p class="max-w-2xl text-gray-900 pt-6">
+      {% blocktranslate count unused_count=unused_codes|length %}There is {{ unused_count }} out of {{ total_count }} recovery codes available.{% plural %}There are {{ unused_count }} out of {{ total_count }} recovery codes available.{% endblocktranslate %}
+    </p>
+
+    <div class="mt-2">
+      <div class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6 textarea-personalizado">
+        {% element field id="recovery_codes" type="textarea" disabled=True rows=unused_codes|length readonly=True %}
+          {% slot label %}
+              {% translate "Unused codes" %}
+          {% endslot %}
+          {% comment %} djlint:off {% endcomment %}
+            {% slot value %}
+              {% for code in unused_codes %}
+                {% if forloop.counter0 %}
+                {% endif %}
+                {{ code }}
+              {% endfor %}
+            {% endslot %}
+          {% comment %} djlint:on {% endcomment %}
+        {% endelement %}
+      </div>
+    </div>
+
+    {% if unused_codes %}
+      {% url 'mfa_download_recovery_codes' as download_url %}
+      {% include "components/btn/ancor_btn.html" with ancor_link=download_url button_text="Descargar códigos" %}
+    {% endif %}
+
+    {% url 'mfa_generate_recovery_codes' as generate_url %}
+    {% include "components/btn/ancor_btn.html" with ancor_link=generate_url button_text="Generar códigos nuevos" %}
+
+  </div>    
+
+  {% include 'components/mensajes.html' %}
+
+{% endblock content_account %}
+

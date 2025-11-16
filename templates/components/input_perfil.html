@@ -1,0 +1,14 @@
+<div class="mb-3">
+  <div class="block text-gray-700 text-sm font-bold mb-2">Foto Perfil</div>
+  <div class="mt-2 flex items-center gap-x-3">
+    <img src="{{ img }}" class="w-20 h-20 rounded-full" alt="Foto de Perfil">
+    <!-- Campo de entrada de archivo oculto -->
+    {{ profile_form.image }}
+    <!-- Botón para abrir el selector de archivos -->
+    <button type="button" id="customImageButton" class="flex w-36 justify-center rounded-md bg-gray-400 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600">
+      Cambiar Imagen
+    </button>
+  </div>
+  <span id="nameImg" class="overflow-auto block pt-1"></span>
+</div>
+

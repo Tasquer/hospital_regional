@@ -1,0 +1,25 @@
+{% extends "account/base_reauthenticate.html" %}
+{% load tailwind_filters %}
+{% load allauth %}
+{% load i18n %}
+
+{% block head_title %}
+    {% trans "Confirm Access" %}
+{% endblock head_title %}
+
+{% block reauthenticate_content %}
+
+  <p class="max-w-2xl text-gray-900">{% blocktranslate %}Enter your password:{% endblocktranslate %}</p>
+  {% url 'account_reauthenticate' as action_url %}
+  {% element form form=form method="post" action=action_url %}
+    {% slot body %}
+      {% csrf_token %}
+      {{ form|crispy }}
+      {{ redirect_field }}
+    {% endslot %}
+    {% slot actions %}
+      {% include "components/btn/button_size.html" with button_text="Confirmar" %}
+    {% endslot %}
+  {% endelement %}
+
+{% endblock reauthenticate_content %}

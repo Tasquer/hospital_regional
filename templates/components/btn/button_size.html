@@ -1,0 +1,6 @@
+<button 
+    name="{{ button_name|default:'action' }}" 
+    type="{{ button_type|default:'submit' }}" 
+    class="flex cursor-pointer mt-7 justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 min-w-40  {{ button_class|default:'' }} ">
+    {{ button_text }}
+</button>

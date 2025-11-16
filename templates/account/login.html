@@ -1,0 +1,52 @@
+{% extends 'components/Layout/base.html' %}
+{% load static %}
+{% load tailwind_filters %}
+{% load i18n %}
+{% load allauth account %}
+
+{% block head_title %}
+  {% trans 'Sign In' %}
+{% endblock %}
+
+{% block content %}
+  <div class="flex min-h-full flex-col justify-center pt-7 px-2">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+      <img class="mx-auto h-28 w-auto" src="{% static "img/logo.svg" %}" alt="mejor ñinez" />
+      <h2 class="mt-4 text-center text-2xl font-bold leading-9 tracking-tight text-gray-400">Iniciar sesión en su cuenta</h2>
+    </div>
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
+      <div class="bg-white px-6 py-12 shadow rounded-lg sm:px-12 mx-4">
+        {% if not SOCIALACCOUNT_ONLY %}
+          {% url 'account_login' as login_url %}
+          {% element form form=form method="post" action=login_url tags="entrance,login" %}
+            {% slot body %}
+              {% csrf_token %}
+              {{ form|crispy }}
+              {{ redirect_field }}
+              {% endslot %}
+            {% slot actions %}
+              {% include "components/btn/button.html" with button_text="Iniciar sesión" button_class="prominent login" %}
+            {% endslot %}
+          {% endelement %}
+        {% endif %}
+
+        {% if LOGIN_BY_CODE_ENABLED %}
+          {% element hr %}
+          {% endelement %}
+          {% element h2 %}
+            <div class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+              {% element button href=request_login_code_url tags='prominent,login,secondary' %}
+                {% trans 'Mail me a sign-in code' %}
+              {% endelement %}
+            </div>
+          {% endelement %}
+        {% endif %}
+        
+        {% if SOCIALACCOUNT_ENABLED %}
+          {% include 'socialaccount/snippets/login.html' with page_layout='entrance' %}
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+{% endblock %}

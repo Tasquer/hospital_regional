@@ -1,0 +1,35 @@
+{% extends "components/Layout/base_pages.html" %}
+{% load static %} 
+{% load tailwind_filters %}
+
+{% block head_title %}
+  Registrar Usuario
+{% endblock head_title %}
+
+{% block content_pages %}
+
+  <h1 class="max-w-2xl font-bold tracking-tight text-gray-900 text-2xl mb-4">Registrar Usuario</h1>
+  <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      {% include 'components/input_perfil.html' with img="/static/img/profile.webp" %}
+      
+      <label for="id_position_FK" class="block text-gray-700 text-sm font-bold mb-2">
+        Cargo
+      </label>
+      {{ profile_form.position_FK }}
+      {{ user_form|crispy }}
+
+      {% include "components/btn/button.html" with button_text="Guardar cambios" %}
+      
+  </form>
+
+  {% include 'components/mensajes.html' %}  
+
+{% endblock content_pages %}    
+
+{% block javascript %}
+
+  <script defer src="{% static "js/script.js" %}"></script>
+
+{% endblock javascript %}

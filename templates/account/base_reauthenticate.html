@@ -1,0 +1,32 @@
+{% extends "account/Layout/base_account.html" %}
+{% load allauth %}
+{% load i18n %}
+{% block head_title %}
+  {% trans 'Confirm Access' %}
+{% endblock %}
+
+{% block content_account %}
+
+  <h1 class="max-w-2xl font-bold tracking-tight text-gray-900 text-2xl mb-4">Confirmar acceso</h1>
+  <div class="space-y-6">
+    <p class="max-w-2xl text-gray-900 pt-6">Vuelva a autenticarse para proteger su cuenta</p>
+
+    {% block reauthenticate_content %}{% endblock %}
+
+    {% if reauthentication_alternatives %}
+      {% element hr %}
+      {% endelement %}
+      <h2 class="max-w-xs font-bold tracking-tight text-gray-900 text-2xl mb-4">Opciones alternativas</h2>
+      <div class="overflow-hidden rounded-md bg-slate-50 shadow">
+        <ul class="divide-y divide-gray-400">
+          {% for alt in reauthentication_alternatives %}
+            <li>
+              <a href="{{ alt.url }}" class="h-full w-full block px-6 py-4">{{ alt.description }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+
+{% endblock %}

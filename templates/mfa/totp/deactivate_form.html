@@ -1,0 +1,44 @@
+{% extends 'components/Layout/base_extendido.html' %}
+{% load tailwind_filters %}
+{% load i18n %}
+{% load allauth %}
+{% block head_title %}
+    {% trans "Deactivate Authenticator App" %}
+{% endblock head_title %}
+
+{% block content_main %}
+
+
+<div class="flex min-h-full flex-col justify-center sm:px-6 lg:px-8">
+  <div class="sm:mx-auto sm:w-full sm:max-w-[680px]">
+    <div class="bg-white px-6 py-12 shadow rounded-lg sm:px-12">
+      <h1 class="max-w-2xl font-bold tracking-tight text-gray-900 text-2xl mb-4">Autentificación de Doble Factor</h1>
+
+      <div class="space-y-6">
+        
+        <p class="max-w-2xl text-gray-900 pt-6">
+            {% blocktranslate %}You are about to deactivate authenticator app based authentication. Are you sure?{% endblocktranslate %}
+        </p>
+
+        {% url 'mfa_deactivate_totp' as action_url %}
+        {% element form form=form method="post" action=action_url no_visible_fields=True %}
+          {% slot body %}
+            {% csrf_token %}
+            {% element fields form=form %}
+                {{ form|crispy }}
+            {% endelement %}
+          {% endslot %}
+          {% slot actions %}
+            <button type="submit" class="flex cursor-pointer mt-7 justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 min-w-40 danger delete">
+              {% trans "Deactivate" %}
+            </button>
+          {% endslot %}
+        {% endelement %}
+
+      </div> 
+      
+    </div>
+  </div>
+</div>
+
+{% endblock content_main %}

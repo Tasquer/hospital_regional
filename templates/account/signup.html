@@ -1,0 +1,35 @@
+{% extends "account/Layout/base_account.html" %}
+{% load tailwind_filters %}
+{% load allauth i18n %}
+
+{% block head_title %}
+    {% trans "Signup" %}
+{% endblock head_title %}
+
+{% block content_account %}
+
+  {% if user.is_superuser %}
+
+    <h1 class="max-w-2xl font-bold tracking-tight text-gray-900 text-2xl mb-4">
+      Registro de Personal:
+    </h1>
+
+    {% if not SOCIALACCOUNT_ONLY %}
+      {% element form form=form method="post" action=action_url tags="entrance,signup" %}
+          {% slot body %}
+            {% csrf_token %}
+            {{ form|crispy }}
+            {{ redirect_field }}
+          {% endslot %}
+          {% slot actions %}
+            {% include "components/btn/button_size.html" with button_text="Registrarce" button_class="prominent signup" %}
+          {% endslot %}
+      {% endelement %}
+    {% endif %}
+    {% if SOCIALACCOUNT_ENABLED %}
+      {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+    {% endif %}
+
+  {% endif %}
+
+{% endblock content_account %}

@@ -1,0 +1,22 @@
+{% extends "account/Layout/base_simple.html" %}
+{% load i18n %}
+{% load allauth %}
+{% block head_title %}
+    {% trans "Verify Your Email Address" %}
+{% endblock head_title %}
+
+{% block content_account %}
+
+  <h1 class="max-w-2xl font-bold tracking-tight text-gray-900 text-2xl mb-4">
+      Verifique su dirección de correo electrónico
+  </h1>
+
+  <div class="space-y-6">
+      <p class="max-w-2xl text-gray-900 pt-6 z-[60]">
+        Le hemos enviado un correo electrónico para su verificación. Siga el enlace proporcionado para finalizar el proceso de registro. Por favor contáctenos si no lo recibe en unos minutos
+      </p>
+  </div>
+
+{% endblock content_account %}
+
+

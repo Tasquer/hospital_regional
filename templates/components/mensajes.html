@@ -1,0 +1,26 @@
+<div class="notifications"></div>
+
+{% if messages %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const messages = [
+        {% for message in messages %}
+          {
+            text: '{{ message|escapejs }}',
+            tags: '{{ message.tags }}'
+          },
+        {% endfor %}
+      ];
+
+      messages.forEach(function(message) {
+        if (message.tags.includes('error') && !message.tags.includes('excel_error')) {
+          error(message.text);
+        } else if (message.tags.includes('success') && !message.text.includes('Ha cerrado sesión') && !message.text.includes('Ha iniciado sesión exitosamente')) {
+          success(message.text);
+        } else if (message.tags.includes('info')) {
+          warning(message.text);
+        }
+      });
+    });
+  </script>
+{% endif %}
