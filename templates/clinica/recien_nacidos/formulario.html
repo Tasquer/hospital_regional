@@ -1,0 +1,53 @@
+{% extends 'components/Layout/base_extendido.html' %}
+
+{% block content_main %}
+<section class="space-y-6 text-white max-w-4xl">
+  <div class="flex items-center justify-between gap-4">
+    <div>
+      <p class="text-sm font-semibold text-indigo-300 uppercase tracking-wide">
+        Módulo clínico
+      </p>
+      <h1 class="text-3xl font-bold text-white">
+        {% if form.instance.pk %}Editar recién nacido{% else %}Nuevo recién nacido{% endif %}
+      </h1>
+      <p class="text-sm text-gray-400">
+        Registra los datos perinatales del recién nacido.
+      </p>
+    </div>
+  </div>
+
+  <form method="post" class="space-y-6 bg-gray-900/40 p-6 rounded-2xl ring-1 ring-white/10">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    {% for field in form %}
+      <div class="space-y-1">
+        <label class="block text-sm font-medium text-gray-200">
+          {{ field.label }}
+          {% if field.field.required %}
+            <span class="text-rose-400">*</span>
+          {% endif %}
+        </label>
+        {{ field }}
+        {% if field.help_text %}
+          <p class="text-xs text-gray-400">{{ field.help_text }}</p>
+        {% endif %}
+        {% for error in field.errors %}
+          <p class="text-xs text-rose-400">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+    <div class="flex justify-end gap-3">
+      <a href="{% url 'clinica:recien_nacido_list' %}"
+         class="rounded-full border border-white/20 px-4 py-2 text-sm text-gray-200 hover:bg-white/5">
+        Cancelar
+      </a>
+      <button type="submit"
+              class="rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400">
+        Guardar
+      </button>
+    </div>
+  </form>
+</section>
+{% endblock content_main %}

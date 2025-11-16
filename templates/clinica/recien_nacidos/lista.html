@@ -1,0 +1,85 @@
+{% extends 'components/Layout/base_extendido.html' %}
+
+{% block content_main %}
+<section class="space-y-6 text-white">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <p class="text-sm font-semibold text-indigo-300 uppercase tracking-wide">
+        Módulo clínico
+      </p>
+      <h1 class="text-3xl font-bold text-white">Recién nacidos</h1>
+      <p class="text-sm text-gray-400">
+        Registra y visualiza los recién nacidos asociados a los partos.
+      </p>
+    </div>
+    <a href="{% url 'clinica:recien_nacido_create' %}"
+       class="inline-flex items-center gap-2 rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400">
+      <span class="text-lg leading-none">+</span>
+      Nuevo RN
+    </a>
+  </div>
+
+  <div class="bg-gray-900/40 ring-1 ring-white/10 rounded-2xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-white/10">
+        <thead class="bg-gray-900/60">
+          <tr class="text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <th class="px-6 py-3">Madre</th>
+            <th class="px-6 py-3">Identificador RN</th>
+            <th class="px-6 py-3">Sexo</th>
+            <th class="px-6 py-3">Peso (g)</th>
+            <th class="px-6 py-3">APGAR</th>
+            <th class="px-6 py-3 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5 bg-gray-900/30">
+          {% for rn in recien_nacidos %}
+            <tr class="text-sm text-gray-100">
+              <td class="px-6 py-4 align-top">
+                <div class="font-semibold">
+                  {{ rn.parto.paciente.nombre_completo|default:rn.parto.paciente }}
+                </div>
+                <div class="text-xs text-gray-400">
+                  Parto #{{ rn.parto.id }}
+                </div>
+              </td>
+              <td class="px-6 py-4 align-top">
+                {{ rn.identificador }}
+              </td>
+              <td class="px-6 py-4 align-top">
+                {{ rn.get_sexo_display }}
+              </td>
+              <td class="px-6 py-4 align-top">
+                {{ rn.peso_gramos }} g
+              </td>
+              <td class="px-6 py-4 align-top">
+                {{ rn.apgar_1_min }}/{{ rn.apgar_5_min }}
+              </td>
+              <td class="px-6 py-4 align-top text-right">
+                <div class="flex justify-end gap-4 text-indigo-300">
+                  <a href="{% url 'clinica:recien_nacido_detail' rn.pk %}" class="hover:text-white">
+                    Ver ficha
+                  </a>
+                  <a href="{% url 'clinica:recien_nacido_update' rn.pk %}" class="text-gray-400 hover:text-white">
+                    Editar
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-400">
+                No hay recién nacidos registrados aún.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include 'components/paginador.html' with page_obj=page_obj %}
+  </div>
+
+  {% include 'components/mensajes.html' %}
+</section>
+{% endblock content_main %}

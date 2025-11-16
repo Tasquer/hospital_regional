@@ -60,6 +60,26 @@
           </a>
         </li>
         <li>
+          <a href="{% url 'clinica:recien_nacido_list' %}"
+            class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold
+                    {% if '/clinica/recien-nacidos' in request.path %}
+                      bg-gray-800 text-white
+                    {% else %}
+                      text-gray-400 hover:text-white hover:bg-gray-800
+                    {% endif %}">
+            <svg class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24"
+                stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <!-- icono simple tipo "bebé" -->
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 21c3.314 0 6-2.239 6-5V9a6 6 0 10-12 0v7c0 2.761 2.686 5 6 5z" />
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9 11h.01M15 11h.01M9.75 14.25a3.5 3.5 0 004.5 0" />
+            </svg>
+            Recién nacidos
+          </a>
+        </li>
+
+        <li>
           <a href="{% url 'reportes:dashboard_obstetricia' %}" class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 {% if '/reportes' in request.path %}text-white bg-gray-800{% else %}text-gray-400 hover:text-white hover:bg-gray-800{% endif %}">
             <svg class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v18h16.5V3H3.75zm3 2.25h1.5v10.5h-1.5V5.25zm4.5 0h1.5v10.5h-1.5V5.25zm4.5 0h1.5v10.5h-1.5V5.25z" />

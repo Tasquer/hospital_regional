@@ -1,0 +1,76 @@
+{% extends 'components/Layout/base_extendido.html' %}
+
+{% block content_main %}
+<section class="space-y-6 text-white max-w-4xl">
+  <div class="flex items-center justify-between gap-4">
+    <div>
+      <p class="text-sm font-semibold text-indigo-300 uppercase tracking-wide">
+        Módulo clínico
+      </p>
+      <h1 class="text-3xl font-bold text-white">Ficha del recién nacido</h1>
+      <p class="text-sm text-gray-400">
+        Información clínica y vínculo con el parto y la madre.
+      </p>
+    </div>
+    <a href="{% url 'clinica:recien_nacido_update' rn.pk %}"
+       class="rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400">
+      Editar
+    </a>
+  </div>
+
+  <div class="grid gap-6 md:grid-cols-2">
+    <div class="space-y-4 bg-gray-900/40 p-5 rounded-2xl ring-1 ring-white/10">
+      <h2 class="text-sm font-semibold text-gray-200">Datos del recién nacido</h2>
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-gray-400">Identificador</dt>
+          <dd class="text-gray-100">{{ rn.identificador }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-400">Sexo</dt>
+          <dd class="text-gray-100">{{ rn.get_sexo_display }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-400">Peso al nacer</dt>
+          <dd class="text-gray-100">{{ rn.peso_gramos }} g</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-400">Talla</dt>
+          <dd class="text-gray-100">{{ rn.talla_cm }} cm</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-400">APGAR</dt>
+          <dd class="text-gray-100">{{ rn.apgar_1_min }}/{{ rn.apgar_5_min }}</dd>
+        </div>
+        <div class="space-y-1">
+          <dt class="text-gray-400">Condición inicial</dt>
+          <dd class="text-gray-100 whitespace-pre-line">{{ rn.condicion_inicial|default:"-" }}</dd>
+        </div>
+        <div class="space-y-1">
+          <dt class="text-gray-400">Derivación / destino</dt>
+          <dd class="text-gray-100 whitespace-pre-line">{{ rn.derivacion|default:"-" }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="space-y-4 bg-gray-900/40 p-5 rounded-2xl ring-1 ring-white/10">
+      <h2 class="text-sm font-semibold text-gray-200">Parto asociado</h2>
+      <p class="text-sm text-gray-100">
+        Madre: {{ rn.parto.paciente.nombre_completo|default:rn.parto.paciente }}
+      </p>
+      <p class="text-sm text-gray-100">
+        Fecha parto: {{ rn.parto.fecha|default:"-" }}
+      </p>
+      <p class="text-sm text-gray-100">
+        Tipo de parto: {{ rn.parto.get_tipo_display|default:rn.parto.tipo }}
+      </p>
+      <div class="pt-2">
+        <a href="{% url 'clinica:parto_detail' rn.parto.pk %}"
+           class="text-sm font-semibold text-indigo-300 hover:text-white">
+          Ver trazabilidad del parto
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock content_main %}

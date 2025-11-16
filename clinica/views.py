@@ -2,8 +2,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from .forms import CasoClinicoForm, PacienteForm
-from .models import CasoClinico, Paciente, Parto
+from .forms import CasoClinicoForm, PacienteForm, RecienNacidoForm
+from .models import CasoClinico, Paciente, Parto, RecienNacido
 
 
 class PacienteListView(LoginRequiredMixin, ListView):
@@ -138,5 +138,52 @@ class PartoCreateView(LoginRequiredMixin, CreateView):
             except Paciente.DoesNotExist:
                 pass
         return initial
+    
+
+class RecienNacidoListView(LoginRequiredMixin, ListView):
+    model = RecienNacido
+    template_name = "clinica/recien_nacidos/lista.html"
+    context_object_name = "recien_nacidos"
+    paginate_by = 20
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .select_related("parto", "parto__paciente")
+            .order_by("-fecha_creacion")
+        )
+
+
+class RecienNacidoCreateView(LoginRequiredMixin, CreateView):
+    model = RecienNacido
+    template_name = "clinica/recien_nacidos/formulario.html"
+    form_class = RecienNacidoForm
+    success_url = reverse_lazy("clinica:recien_nacido_list")
+
+    def get_initial(self):
+        initial = super().get_initial()
+        parto_id = self.request.GET.get("parto")
+        if parto_id:
+            initial["parto"] = parto_id
+        return initial
+
+
+class RecienNacidoUpdateView(RecienNacidoCreateView, UpdateView):
+    pass
+
+
+class RecienNacidoDetailView(LoginRequiredMixin, DetailView):
+    model = RecienNacido
+    template_name = "clinica/recien_nacidos/detalle.html"
+    context_object_name = "rn"
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .select_related("parto", "parto__paciente")
+        )
+
 
 # Create your views here.
