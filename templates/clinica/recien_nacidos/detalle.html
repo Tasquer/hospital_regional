@@ -54,23 +54,31 @@
     </div>
 
     <div class="space-y-4 bg-gray-900/40 p-5 rounded-2xl ring-1 ring-white/10">
-      <h2 class="text-sm font-semibold text-gray-200">Parto asociado</h2>
-      <p class="text-sm text-gray-100">
+    <h2 class="text-sm font-semibold text-gray-200">Parto asociado</h2>
+    <p class="text-sm text-gray-100">
         Madre: {{ rn.parto.paciente.nombre_completo|default:rn.parto.paciente }}
-      </p>
-      <p class="text-sm text-gray-100">
-        Fecha parto: {{ rn.parto.fecha|default:"-" }}
-      </p>
-      <p class="text-sm text-gray-100">
-        Tipo de parto: {{ rn.parto.get_tipo_display|default:rn.parto.tipo }}
-      </p>
-      <div class="pt-2">
-        <a href="{% url 'clinica:parto_detail' rn.parto.pk %}"
-           class="text-sm font-semibold text-indigo-300 hover:text-white">
-          Ver trazabilidad del parto
+    </p>
+    <p class="text-sm text-gray-100">
+        Fecha y hora del parto:
+        {{ rn.parto.fecha|date:"d/m/Y H:i" }}
+    </p>
+    <p class="text-sm text-gray-100">
+        Profesional responsable:
+        {{ rn.parto.personal_responsable.get_full_name|default:rn.parto.personal_responsable.username }}
+    </p>
+    <p class="text-sm text-gray-100">
+        Alta registrada:
+        {% if rn.parto.alta %}Sí{% else %}No{% endif %}
+    </p>
+    <div class="pt-2">
+        <a href="/clinica/partos/"
+        class="text-sm font-semibold text-indigo-300 hover:text-white">
+        Ver partos
         </a>
-      </div>
     </div>
+    </div>
+
+
   </div>
 </section>
 {% endblock content_main %}
