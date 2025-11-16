@@ -24,6 +24,7 @@
           <col class="sm:w-2/12">
           <col class="sm:w-2/12">
           <col class="sm:w-2/12">
+          <col class="sm:w-2/12">
         </colgroup>
         <thead class="border-b border-white/10 text-xs font-semibold uppercase tracking-wide text-gray-400">
           <tr>
@@ -31,6 +32,7 @@
             <th scope="col" class="px-6 py-3">RUT</th>
             <th scope="col" class="px-6 py-3">Teléfono</th>
             <th scope="col" class="px-6 py-3">Estado</th>
+            <th scope="col" class="px-6 py-3">Trazabilidad</th>
             <th scope="col" class="py-3 pl-6 pr-6 text-right sm:pr-8">Acciones</th>
           </tr>
         </thead>
@@ -56,6 +58,11 @@
                     <span class="h-2 w-2 rounded-full bg-rose-400"></span> Inactivo
                   </span>
                 {% endif %}
+              </td>
+              <td class="px-6 py-4 text-sm">
+                <a href="{% url 'clinica:paciente_trazabilidad' paciente.pk %}" class="text-xs font-medium text-indigo-300 hover:text-indigo-100">
+                  Ver trazabilidad
+                </a>
               </td>
               <td class="py-4 pl-6 pr-6 text-right text-sm font-semibold sm:pr-8">
                 <div class="flex justify-end gap-4 text-indigo-300">

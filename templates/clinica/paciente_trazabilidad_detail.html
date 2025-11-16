@@ -1,0 +1,181 @@
+{% extends 'components/Layout/base_extendido.html' %}
+
+{% block content_main %}
+<section class="mx-auto max-w-6xl space-y-6 text-white">
+  <header class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <p class="text-sm font-semibold text-indigo-300 uppercase tracking-wide">
+        Clínica · Trazabilidad
+      </p>
+      <h1 class="text-3xl font-bold leading-tight text-white">
+        Ficha de trazabilidad de paciente
+      </h1>
+      <p class="text-sm text-gray-400">
+        Trazabilidad madre – parto – recién nacido – alta clínica.
+      </p>
+    </div>
+    <a href="{% url 'clinica:paciente_list' %}"
+       class="text-sm font-semibold text-indigo-200 hover:text-white">
+      ← Volver a pacientes
+    </a>
+  </header>
+
+  <div class="space-y-6">
+    <!-- Datos de la madre -->
+    <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20 space-y-4">
+      <h2 class="text-lg font-semibold text-white">Datos de la madre</h2>
+      <dl class="grid gap-4 text-sm sm:grid-cols-3">
+        <div>
+          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Nombre</dt>
+          <dd class="mt-1 text-sm text-gray-100">{{ paciente.nombre_completo }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">RUT</dt>
+          <dd class="mt-1 text-sm text-gray-100">{{ paciente.rut }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Fecha de nacimiento</dt>
+          <dd class="mt-1 text-sm text-gray-100">{{ paciente.fecha_nacimiento }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Partos y recién nacidos -->
+    <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20 space-y-4">
+      <h2 class="text-lg font-semibold text-white">Partos y recién nacidos</h2>
+
+      {% if trazabilidad %}
+        <div class="space-y-6">
+          {% for item in trazabilidad %}
+            <article class="rounded-2xl border border-white/10 bg-slate-950/70 p-4 space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="text-base font-semibold text-white">
+                  Parto {{ forloop.counter }}
+                </h3>
+                <p class="text-xs text-gray-400">
+                  {{ item.parto.fecha_hora }}
+                </p>
+              </div>
+
+              <!-- Datos del parto -->
+              <dl class="grid gap-4 text-sm sm:grid-cols-2">
+                <div>
+                  <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Tipo de parto</dt>
+                  <dd class="mt-1 text-sm text-gray-100">{{ item.parto.get_tipo_parto_display }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Profesional responsable</dt>
+                  <dd class="mt-1 text-sm text-gray-100">
+                    {{ item.parto.personal_responsable|default:"—" }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Sala / pabellón</dt>
+                  <dd class="mt-1 text-sm text-gray-100">
+                    {{ item.parto.sala|default:"Sin registro" }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Complicaciones</dt>
+                  <dd class="mt-1 text-sm text-gray-100">
+                    {{ item.parto.complicaciones|default:"Sin registro" }}
+                  </dd>
+                </div>
+              </dl>
+
+              <!-- Recién nacidos -->
+              <div class="border-t border-white/5 pt-3 space-y-2">
+                <h4 class="text-sm font-semibold text-white">Recién nacidos</h4>
+                {% if item.recien_nacidos %}
+                  <div class="grid gap-3 md:grid-cols-2">
+                    {% for rn in item.recien_nacidos %}
+                      <div class="rounded-xl bg-slate-900/80 p-3 border border-white/5">
+                        <p class="text-sm font-semibold text-gray-100">
+                          {{ rn.identificador }} · {{ rn.sexo }}
+                        </p>
+                        <p class="text-xs text-gray-300">
+                          Peso: {{ rn.peso_gramos }} g · Talla: {{ rn.talla_cm }} cm
+                        </p>
+                        <p class="text-xs text-gray-300">
+                          APGAR: {{ rn.apgar_1_min }}/{{ rn.apgar_5_min }}
+                        </p>
+                        {% if rn.condicion_inicial %}
+                          <p class="mt-1 text-xs text-gray-400">
+                            {{ rn.condicion_inicial }}
+                          </p>
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <p class="text-sm text-gray-300">
+                    No hay recién nacidos registrados para este parto.
+                  </p>
+                {% endif %}
+              </div>
+
+              <!-- Alta clínica -->
+              <div class="border-t border-white/5 pt-3 space-y-2">
+                <h4 class="text-sm font-semibold text-white">Alta clínica</h4>
+                {% if item.alta %}
+                  <dl class="grid gap-4 text-sm sm:grid-cols-2">
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Fecha de alta</dt>
+                      <dd class="mt-1 text-sm text-gray-100">{{ item.alta.fecha_alta }}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Tipo de alta</dt>
+                      <dd class="mt-1 text-sm text-gray-100">
+                        {{ item.alta.get_tipo_alta_display }}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Profesional responsable</dt>
+                      <dd class="mt-1 text-sm text-gray-100">
+                        {{ item.alta.profesional_responsable|default:"—" }}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Requiere seguimiento</dt>
+                      <dd class="mt-1 text-sm text-gray-100">
+                        {{ item.alta.requiere_seguimiento|yesno:"Sí,No" }}
+                      </dd>
+                    </div>
+                  </dl>
+                  {% if item.alta.condicion_egreso %}
+                    <p class="text-sm text-gray-300">
+                      <span class="font-semibold">Condición al egreso:</span>
+                      {{ item.alta.condicion_egreso }}
+                    </p>
+                  {% endif %}
+                  {% if item.alta.proxima_cita %}
+                    <p class="text-sm text-gray-300">
+                      <span class="font-semibold">Próxima cita:</span>
+                      {{ item.alta.proxima_cita }}
+                    </p>
+                  {% endif %}
+                  {% if item.alta.observaciones %}
+                    <p class="text-sm text-gray-400">
+                      {{ item.alta.observaciones }}
+                    </p>
+                  {% endif %}
+                {% else %}
+                  <p class="text-sm text-gray-300">
+                    No se ha registrado alta clínica para este parto.
+                  </p>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-sm text-gray-300">
+          Este paciente no tiene partos registrados.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% include 'components/mensajes.html' %}
+</section>
+{% endblock content_main %}

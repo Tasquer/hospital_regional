@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from .forms import CasoClinicoForm, PacienteForm
-from .models import CasoClinico, Paciente
+from .models import CasoClinico, Paciente, Parto
 
 
 class PacienteListView(LoginRequiredMixin, ListView):
@@ -73,5 +73,70 @@ class CasoClinicoDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         return super().get_queryset().select_related("paciente", "medico_responsable")
+
+
+class PacienteTrazabilidadDetailView(LoginRequiredMixin, DetailView):
+    model = Paciente
+    template_name = "clinica/paciente_trazabilidad_detail.html"
+    context_object_name = "paciente"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        paciente = self.object
+        partos = paciente.partos.select_related("personal_responsable").all()
+
+        trazabilidad = []
+        for parto in partos:
+            recien_nacidos = list(parto.recien_nacidos.all())
+            alta = getattr(parto, "alta", None)
+            trazabilidad.append(
+                {
+                    "parto": parto,
+                    "recien_nacidos": recien_nacidos,
+                    "alta": alta,
+                }
+            )
+
+        context["trazabilidad"] = trazabilidad
+        return context
+
+
+class PartoListView(LoginRequiredMixin, ListView):
+    model = Parto
+    template_name = "clinica/partos/lista.html"
+    context_object_name = "partos"
+    paginate_by = 10
+
+    def get_queryset(self):
+        qs = (
+            Parto.objects.select_related("paciente", "personal_responsable")
+            .order_by("-fecha_hora")
+        )
+        return qs
+
+
+class PartoCreateView(LoginRequiredMixin, CreateView):
+    model = Parto
+    template_name = "clinica/partos/formulario.html"
+    fields = [
+        "paciente",
+        "fecha_hora",
+        "tipo_parto",
+        "sala",
+        "complicaciones",
+        "duracion_trabajo_parto_min",
+        "personal_responsable",
+    ]
+    success_url = reverse_lazy("clinica:parto_list")
+
+    def get_initial(self):
+        initial = super().get_initial()
+        paciente_id = self.request.GET.get("paciente")
+        if paciente_id:
+            try:
+                initial["paciente"] = Paciente.objects.get(pk=paciente_id)
+            except Paciente.DoesNotExist:
+                pass
+        return initial
 
 # Create your views here.
