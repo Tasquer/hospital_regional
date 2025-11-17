@@ -34,6 +34,7 @@ LOCAL_APPS = [
     "homeApp",
     "UsuarioApp",
     "clinica",
+    "reportes",
 ]
 
 THIRD_APPS = [

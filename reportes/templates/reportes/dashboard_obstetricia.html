@@ -1,0 +1,75 @@
+{% extends 'components/Layout/base_extendido.html' %}
+{% load humanize %} {% block content_main %}
+<section class="space-y-6 text-white">
+  
+  <div>
+    <p class="text-sm font-semibold text-indigo-300 uppercase tracking-wide">Módulo de Reportes</p>
+    <h1 class="text-3xl font-bold text-white">Dashboard de Obstetricia</h1>
+    <p class="text-sm text-gray-400">Indicadores clave de Partos y Recién Nacidos (REM A24).</p>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
+      <h2 class="text-sm font-semibold text-gray-400">Total Partos</h2>
+      <p class="mt-2 text-4xl font-bold text-white">{{ total_partos|intcomma }}</p>
+    </div>
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
+      <h2 class="text-sm font-semibold text-gray-400">Total Recién Nacidos</h2>
+      <p class="mt-2 text-4xl font-bold text-white">{{ total_recien_nacidos|intcomma }}</p>
+    </div>
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
+      <h2 class="text-sm font-semibold text-gray-400">Partos con Complicaciones</h2>
+      <p class="mt-2 text-4xl font-bold text-red-400">{{ total_complicaciones|intcomma }}</p>
+    </div>
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
+      <h2 class="text-sm font-semibold text-gray-400">Promedio APGAR</h2>
+      <p class="mt-2 text-4xl font-bold text-white">{{ promedio_apgar_rn|floatformat:1|default:"N/A" }}</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
+      <h2 class="text-lg font-semibold text-white">Distribución Tipo de Parto</h2>
+      {% for item in distribucion_tipo_parto %}
+        <div class="flex justify-between items-center">
+          <span class="text-lg capitalize text-white">{{ item.tipo_display }}</span>
+          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
+        </div>
+      {% empty %}
+        <p class="text-gray-400">No hay datos de tipo de parto.</p>
+      {% endfor %}
+    </div>
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
+      <h2 class="text-lg font-semibold text-white">Distribución Sexo RN</h2>
+      {% for item in distribucion_sexo_rn %}
+        <div class="flex justify-between items-center">
+          <span class="text-lg capitalize text-white">{{ item.sexo_display }}</span>
+          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
+        </div>
+      {% empty %}
+         <p class="text-gray-400">No hay datos de recién nacidos.</p>
+      {% endfor %}
+    </div>
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
+      <h2 class="text-lg font-semibold text-white">Promedios Vitales RN</h2>
+      <div class="flex justify-between items-center">
+        <span class="text-lg capitalize text-white">Peso (grs)</span>
+        <span class="text-xl font-semibold text-white">{{ promedio_peso_rn|floatformat:0|intcomma|default:"N/A" }}</span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-lg capitalize text-white">Talla (cms)</span>
+        <span class="text-xl font-semibold text-white">{{ promedio_talla_rn|floatformat:1|default:"N/A" }}</span>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+{% endblock content_main %}

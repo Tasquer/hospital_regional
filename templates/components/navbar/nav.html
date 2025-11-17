@@ -59,6 +59,14 @@
             Partos
           </a>
         </li>
+        <li>
+          <a href="{% url 'reportes:dashboard_obstetricia' %}" class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 {% if '/reportes' in request.path %}text-white bg-gray-800{% else %}text-gray-400 hover:text-white hover:bg-gray-800{% endif %}">
+            <svg class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v18h16.5V3H3.75zm3 2.25h1.5v10.5h-1.5V5.25zm4.5 0h1.5v10.5h-1.5V5.25zm4.5 0h1.5v10.5h-1.5V5.25z" />
+            </svg>
+            Reportes
+          </a>
+        </li>
       </ul>
     </li>
     <li>
