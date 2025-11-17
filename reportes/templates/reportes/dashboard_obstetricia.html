@@ -32,6 +32,8 @@
       </a>
     </form>
   </div>
+
+
   <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
 
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
@@ -61,6 +63,7 @@
       <h2 class="text-lg font-semibold text-white">Gráfico: Distribución Tipo de Parto</h2>
       <div id="chart_tipo_parto" class="mt-4" style="width: 100%; height: 350px;"></div>
     </div>
+
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
       <h2 class="text-lg font-semibold text-white">Resumen Tipo de Parto</h2>
       {% for item in distribucion_tipo_parto %}
@@ -72,7 +75,42 @@
         <p class="text-gray-400">No hay datos de tipo de parto para el rango seleccionado.</p>
       {% endfor %}
     </div>
+  </div>
 
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
+      <h2 class="text-lg font-semibold text-white">Desviación Estándar (Vitales RN)</h2>
+      <div class="flex justify-between items-center">
+        <span class="text-lg capitalize text-white">Peso (grs)</span>
+        <span class="text-xl font-semibold text-white">± {{ stddev_peso_rn|floatformat:0|intcomma|default:"N/A" }}</span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-lg capitalize text-white">Talla (cms)</span>
+        <span class="text-xl font-semibold text-white">± {{ stddev_talla_rn|floatformat:1|default:"N/A" }}</span>
+      </div>
+       <div class="flex justify-between items-center">
+        <span class="text-lg capitalize text-white">APGAR (5 min)</span>
+        <span class="text-xl font-semibold text-white">± {{ stddev_apgar_rn|floatformat:1|default:"N/A" }}</span>
+      </div>
+    </div>
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
+      <h2 class="text-lg font-semibold text-white">Promedios Vitales RN</h2>
+      <div class="flex justify-between items-center">
+        <span class="text-lg capitalize text-white">Peso (grs)</span>
+        <span class="text-xl font-semibold text-white">{{ promedio_peso_rn|floatformat:0|intcomma|default:"N/A" }}</span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-lg capitalize text-white">Talla (cms)</span>
+        <span class="text-xl font-semibold text-white">{{ promedio_talla_rn|floatformat:1|default:"N/A" }}</span>
+      </div>
+       <div class="flex justify-between items-center">
+        <span class="text-lg capitalize text-white">APGAR (5 min)</span>
+        <span class="text-xl font-semibold text-white">{{ promedio_apgar_rn|floatformat:1|default:"N/A" }}</span>
+      </div>
+    </div>
+    
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
       <h2 class="text-lg font-semibold text-white">Distribución Sexo RN</h2>
       {% for item in distribucion_sexo_rn %}
@@ -81,22 +119,57 @@
           <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
         </div>
       {% empty %}
-         <p class="text-gray-400">No hay datos de recién nacidos para el rango seleccionado.</p>
+         <p class="text-gray-400">No hay datos de recién nacidos.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+    
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
+      <h2 class="text-lg font-semibold text-white">Pacientes por Pueblo Originario</h2>
+      {% for item in distribucion_pueblos|slice:":3" %} <div class="flex justify-between items-center">
+          <span class="text-lg capitalize text-white">{{ item.pueblo_display }}</span>
+          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
+        </div>
+      {% empty %}
+         <p class="text-gray-400">No hay datos demográficos.</p>
       {% endfor %}
     </div>
 
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3 lg:col-span-2">
-      <h2 class="text-lg font-semibold text-white">Promedios Vitales RN</h2>
-      <div class="flex justify-between items-center">
-        <span class="text-lg capitalize text-white">Peso (gramos)</span>
-        <span class="text-xl font-semibold text-white">{{ promedio_peso_rn|floatformat:0|intcomma|default:"N/A" }}</span>
-      </div>
-      <div class="flex justify-between items-center">
-        <span class="text-lg capitalize text-white">Talla (cms)</span>
-        <span class="text-xl font-semibold text-white">{{ promedio_talla_rn|floatformat:1|default:"N/A" }}</span>
-      </div>
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
+      <h2 class="text-lg font-semibold text-white">Pacientes por Nivel Educacional</h2>
+      {% for item in distribucion_educacion|slice:":3" %} <div class="flex justify-between items-center">
+          <span class="text-lg capitalize text-white">{{ item.educacion_display }}</span>
+          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
+        </div>
+      {% empty %}
+         <p class="text-gray-400">No hay datos demográficos.</p>
+      {% endfor %}
     </div>
 
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
+      <h2 class="text-lg font-semibold text-white">Pacientes por Estado Civil</h2>
+      {% for item in distribucion_estado_civil|slice:":3" %} <div class="flex justify-between items-center">
+          <span class="text-lg capitalize text-white">{{ item.estado_civil_display }}</span>
+          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
+        </div>
+      {% empty %}
+         <p class="text-gray-400">No hay datos demográficos.</p>
+      {% endfor %}
+    </div>
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
+      <h2 class="text-lg font-semibold text-white">Pacientes por Nacionalidad</h2>
+      {% for item in distribucion_nacionalidad %}
+        <div class="flex justify-between items-center">
+          <span class="text-lg capitalize text-white">{{ item.nacionalidad_display }}</span>
+          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
+        </div>
+      {% empty %}
+         <p class="text-gray-400">No hay datos demográficos.</sppan>
+      {% endfor %}
+    </div>
   </div>
 
 </section>
@@ -104,43 +177,37 @@
 
 
 {% block javascript %}
-  {{ block.super }}
-  <script>
-    // Esperamos a que el DOM esté cargado
+  {{ block.super }} <script>
     document.addEventListener('DOMContentLoaded', function() {
       
-      // 1. Obtenemos los datos JSON que pasamos desde la vista
       const chartData = {{ chart_data_tipo_parto|safe }};
       
-      // 2. Verificamos si hay datos y si la librería ECharts cargó
       if (chartData && chartData.length > 0 && typeof echarts !== 'undefined') {
         
-        // 3. Inicializamos el gráfico
         var chartDom = document.getElementById('chart_tipo_parto');
         var myChart = echarts.init(chartDom, 'dark'); // Usamos el tema 'dark'
         var option;
 
-        // 4. Configuramos las opciones del gráfico de torta (Pie Chart)
         option = {
-          backgroundColor: 'transparent', // Fondo transparente
+          backgroundColor: 'transparent',
           tooltip: {
             trigger: 'item',
-            formatter: '{b}: {c} ({d}%)' // Formato del tooltip: Cesárea: 5 (50%)
+            formatter: '{b}: {c} ({d}%)'
           },
           legend: {
             orient: 'vertical',
             left: 'left',
             top: 'center',
             textStyle: {
-                color: '#ccc' // Color del texto de la leyenda
+                color: '#ccc'
             }
           },
           series: [
             {
               name: 'Tipo de Parto',
               type: 'pie',
-              radius: ['40%', '70%'], // Hacemos un gráfico de "dona"
-              center: ['65%', '50%'], // Centramos el gráfico
+              radius: ['40%', '70%'],
+              center: ['65%', '50%'],
               data: chartData,
               emphasis: {
                 itemStyle: {
@@ -150,21 +217,17 @@
                 }
               },
               label: {
-                show: false, // Ocultamos etiquetas en el gráfico
+                show: false,
                 position: 'center'
               },
             }
           ]
         };
         
-        // 5. Aplicamos la configuración y dibujamos el gráfico
         option && myChart.setOption(option);
-        
-        // Hacemos que el gráfico se ajuste si cambia el tamaño de la ventana
         window.addEventListener('resize', myChart.resize);
 
       } else {
-        // Si no hay datos, mostramos un mensaje
         document.getElementById('chart_tipo_parto').innerHTML = 
           '<div class="flex items-center justify-center h-full"><p class="text-gray-400">No hay datos para mostrar en el gráfico (asegúrate de seleccionar un rango de fechas).</p></div>';
       }

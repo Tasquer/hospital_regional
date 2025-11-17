@@ -4,8 +4,9 @@ import json
 from datetime import datetime
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Avg
-from clinica.models import Parto, RecienNacido
+# Importamos StdDev (Desviación Estándar)
+from django.db.models import Count, Avg, StdDev, Q
+from clinica.models import Paciente, Parto, RecienNacido
 
 class ReportesObstetriciaView(LoginRequiredMixin, TemplateView):
     template_name = "reportes/dashboard_obstetricia.html"
@@ -22,15 +23,25 @@ class ReportesObstetriciaView(LoginRequiredMixin, TemplateView):
         # Querysets base
         partos_qs = Parto.objects.all()
         rn_qs = RecienNacido.objects.all()
+        
+        # Obtenemos los IDs de los pacientes que tuvieron partos
+        pacientes_id_base = partos_qs.values_list('paciente_id', flat=True).distinct()
+        pacientes_qs = Paciente.objects.filter(id__in=pacientes_id_base)
+
 
         if fecha_inicio_str and fecha_final_str:
             try:
                 fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
                 fecha_final = datetime.strptime(fecha_final_str, '%Y-%m-%d').date()
                 
+                # Filtramos Partos y RN por fecha (usando fecha_creacion de tu modelo)
                 partos_qs = partos_qs.filter(fecha_creacion__date__range=[fecha_inicio, fecha_final])
                 rn_qs = rn_qs.filter(fecha_creacion__date__range=[fecha_inicio, fecha_final])
                 
+                # Volvemos a filtrar pacientes basado en los partos YA filtrados por fecha
+                pacientes_id_filtrados = partos_qs.values_list('paciente_id', flat=True).distinct()
+                pacientes_qs = Paciente.objects.filter(id__in=pacientes_id_filtrados)
+
             except ValueError:
                 pass
         
@@ -54,56 +65,97 @@ class ReportesObstetriciaView(LoginRequiredMixin, TemplateView):
         chart_data_tipo_parto_list = [] 
 
         for item in partos_raw:
-            # Obtenemos el nombre (p.ej. "Cesárea")
-            display_name = tipo_parto_map.get(item['tipo_parto'], item['tipo_parto'])
-            
-            # ¡CORRECCIÓN AQUÍ!
-            # Convertimos el objeto '__proxy__' a un string simple
-            display_name_str = str(display_name)
-
-            # Para la lista
-            distribucion_tipo_parto_list.append({
-                'tipo_display': display_name_str,
-                'total': item['total']
-            })
-            
-            # Para el gráfico (Esta era la línea que fallaba)
-            chart_data_tipo_parto_list.append({
-                'value': item['total'],
-                'name': display_name_str  # Usamos el string simple
-            })
+            display_name_str = str(tipo_parto_map.get(item['tipo_parto'], item['tipo_parto']))
+            distribucion_tipo_parto_list.append({'tipo_display': display_name_str,'total': item['total']})
+            chart_data_tipo_parto_list.append({'value': item['total'],'name': display_name_str})
 
         context["distribucion_tipo_parto"] = distribucion_tipo_parto_list
-        # Esto ahora funcionará
         context["chart_data_tipo_parto"] = json.dumps(chart_data_tipo_parto_list)
-
 
         # 3. Distribución Sexo Recién Nacidos
         sexo_map = dict(RecienNacido.SexoChoices.choices)
-        sexo_raw = rn_qs.values('sexo').annotate(
-            total=Count('id')
-        ).order_by('sexo')
-        
-        # ¡CORRECCIÓN AQUÍ TAMBIÉN! (Buena práctica)
-        # Convertimos a string simple de inmediato
+        sexo_raw = rn_qs.values('sexo').annotate(total=Count('id')).order_by('sexo')
         context["distribucion_sexo_rn"] = [
-            {
-                'sexo_display': str(sexo_map.get(item['sexo'], item['sexo'])),
-                'total': item['total']
-            } for item in sexo_raw
+            {'sexo_display': str(sexo_map.get(item['sexo'], item['sexo'])),'total': item['total']} 
+            for item in sexo_raw
         ]
 
-        # 4. Estadísticas Vitales RN (Promedios)
+        # 4. Estadísticas Vitales RN (Promedios Y Desviación Estándar - Punto 1)
         stats_vitales = rn_qs.aggregate(
             Avg('peso_gramos'),
+            StdDev('peso_gramos'), 
             Avg('talla_cm'),
-            Avg('apgar_5_min')
+            StdDev('talla_cm'), 
+            Avg('apgar_5_min'),
+            StdDev('apgar_5_min')
         )
         context["promedio_peso_rn"] = stats_vitales.get('peso_gramos__avg')
+        context["stddev_peso_rn"] = stats_vitales.get('peso_gramos__stddev')
         context["promedio_talla_rn"] = stats_vitales.get('talla_cm__avg')
+        context["stddev_talla_rn"] = stats_vitales.get('talla_cm__stddev')
         context["promedio_apgar_rn"] = stats_vitales.get('apgar_5_min__avg')
+        context["stddev_apgar_rn"] = stats_vitales.get('apgar_5_min__stddev')
 
-        # 5. Conteo de Partos con Complicaciones
-        context["total_complicaciones"] = partos_qs.filter(complicaciones=True).count()
+        # 5. Complicaciones
+        # ¡LÓGICA CORREGIDA! Tu modelo usa TextField, no BooleanField.
+        # Contamos los partos donde el campo 'complicaciones' NO está vacío.
+        context["total_complicaciones"] = partos_qs.exclude(
+            Q(complicaciones__isnull=True) | Q(complicaciones__exact='')
+        ).count()
+
+
+        # --- 3. NUEVAS CONSULTAS DEMOGRÁFICAS (Punto 2 y 3) ---
+        
+        # Moda de Pueblos Originarios
+        pueblo_map = dict(Paciente.PuebloOriginarioChoices.choices)
+        pueblos_raw = pacientes_qs.values('pueblo_originario').annotate(
+            total=Count('id')
+        ).order_by('-total') # Ordenamos de mayor a menor
+        
+        context["distribucion_pueblos"] = [
+            {
+                'pueblo_display': str(pueblo_map.get(item['pueblo_originario'], item['pueblo_originario'])),
+                'total': item['total']
+            } for item in pueblos_raw
+        ]
+
+        # Moda de Nivel Educacional
+        educacion_map = dict(Paciente.NivelEducacionalChoices.choices)
+        educacion_raw = pacientes_qs.values('nivel_educacional').annotate(
+            total=Count('id')
+        ).order_by('-total')
+        
+        context["distribucion_educacion"] = [
+            {
+                'educacion_display': str(educacion_map.get(item['nivel_educacional'], item['nivel_educacional'])),
+                'total': item['total']
+            } for item in educacion_raw
+        ]
+        
+        # Moda de Estado Civil
+        estado_civil_map = dict(Paciente.EstadoCivilChoices.choices)
+        estado_civil_raw = pacientes_qs.values('estado_civil').annotate(
+            total=Count('id')
+        ).order_by('-total')
+        
+        context["distribucion_estado_civil"] = [
+            {
+                'estado_civil_display': str(estado_civil_map.get(item['estado_civil'], item['estado_civil'])),
+                'total': item['total']
+            } for item in estado_civil_raw
+        ]
+        
+        # Moda de Nacionalidad
+        nacionalidad_map = dict(Paciente.NacionalidadChoices.choices)
+        nacionalidad_raw = pacientes_qs.values('nacionalidad').annotate(
+            total=Count('id')
+        ).order_by('-total')
+        
+        context["distribucion_nacionalidad"] = [
+            {
+                'nacionalidad_display': str(nacionalidad_map.get(item['nacionalidad'], item['nacionalidad'])),
+                'total': item['total']
+            } for item in nacionalidad_raw
+        ]
 
         return context

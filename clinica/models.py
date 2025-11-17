@@ -1,3 +1,5 @@
+# clinica/models.py
+
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
@@ -9,6 +11,37 @@ class Paciente(models.Model):
         FEMENINO = "F", _("Femenino")
         OTRO = "O", _("Otro")
 
+    # --- INICIO: Clases Choices para los nuevos campos (de elementos_reportes.txt) ---
+    class EstadoCivilChoices(models.TextChoices):
+        SOLTERA = 'soltera', _('Soltera')
+        CASADA = 'casada', _('Casada')
+        VIUDA = 'viuda', _('Viuda')
+        DIVORCIADA = 'divorciada', _('Divorciada')
+        CONVIVIENTE = 'conviviente', _('Conviviente')
+        OTRO = 'otro', _('Otro')
+
+    class NivelEducacionalChoices(models.TextChoices):
+        NINGUNA = 'ninguna', _('Ninguna')
+        BASICA = 'basica', _('Básica')
+        MEDIA = 'media', _('Media')
+        TECNICA = 'tecnica', _('Técnica')
+        UNIVERSITARIA = 'universitaria', _('Universitaria')
+        OTRO = 'otro', _('Otro')
+
+    class PuebloOriginarioChoices(models.TextChoices):
+        NINGUNO = 'ninguno', _('Ninguno')
+        MAPUCHE = 'mapuche', _('Mapuche')
+        AYMARA = 'aymara', _('Aymara')
+        RAPANUI = 'rapanui', _('Rapa Nui')
+        OTRO = 'otro', _('Otro')
+
+    class NacionalidadChoices(models.TextChoices):
+        CHILENA = 'chilena', _('Chilena')
+        EXTRANJERA = 'extranjera', _('Extranjera')
+    # --- FIN: Clases Choices ---
+
+
+    # --- Campos Originales ---
     rut = models.CharField(_("RUT"), max_length=12, unique=True)
     nombre_completo = models.CharField(_("Nombre completo"), max_length=255)
     fecha_nacimiento = models.DateField(_("Fecha de nacimiento"))
@@ -16,6 +49,38 @@ class Paciente(models.Model):
     telefono = models.CharField(_("Teléfono"), max_length=20, blank=True)
     email = models.EmailField(_("Correo electrónico"), blank=True)
     direccion = models.CharField(_("Dirección"), max_length=255, blank=True)
+    
+    # --- INICIO: Nuevos Campos Demográficos (de elementos_reportes.txt) ---
+    estado_civil = models.CharField(
+        _('Estado Civil'),
+        max_length=20,
+        choices=EstadoCivilChoices.choices,
+        default=EstadoCivilChoices.OTRO,
+        null=True, blank=True
+    )
+    nivel_educacional = models.CharField(
+        _('Nivel Educacional'),
+        max_length=20,
+        choices=NivelEducacionalChoices.choices,
+        default=NivelEducacionalChoices.OTRO,
+        null=True, blank=True
+    )
+    pueblo_originario = models.CharField(
+        _('Pueblo Originario'),
+        max_length=20,
+        choices=PuebloOriginarioChoices.choices,
+        default=PuebloOriginarioChoices.NINGUNO,
+        null=True, blank=True
+    )
+    nacionalidad = models.CharField(
+        _('Nacionalidad'),
+        max_length=20,
+        choices=NacionalidadChoices.choices,
+        default=NacionalidadChoices.CHILENA,
+        null=True, blank=True
+    )
+    # --- FIN: Nuevos Campos Demográficos ---
+
     activo = models.BooleanField(_("Activo"), default=True)
     fecha_creacion = models.DateTimeField(_("Fecha de creación"), auto_now_add=True)
 
