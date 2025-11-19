@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import CasoClinico, Paciente, RecienNacido
+from .models import CasoClinico, Paciente, RecienNacido, Parto
 
 
 INPUT_CLASS = "w-full rounded-2xl border border-gray-200/70 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400/40"
@@ -56,6 +56,25 @@ class PacienteForm(BaseClinicaForm):
         widgets = {
             "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
         }
+
+class PartoForm(BaseClinicaForm):
+    class Meta:
+        model = Parto
+        fields = [
+            "paciente",
+            "fecha_hora",
+            "tipo_parto",
+            "posicion_parto",
+            "posicion_parto_otro",
+            "sala",
+            "complicaciones",
+            "duracion_trabajo_parto_min",
+            "personal_responsable",
+        ]
+        widgets = {
+            "fecha_hora": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        }
+
 
 class RecienNacidoForm(BaseClinicaForm):
     class Meta:

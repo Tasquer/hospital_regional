@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from .forms import CasoClinicoForm, PacienteForm, RecienNacidoForm
+from .forms import CasoClinicoForm, PacienteForm, RecienNacidoForm, PartoForm
 from .models import CasoClinico, Paciente, Parto, RecienNacido
 
 
@@ -118,15 +118,7 @@ class PartoListView(LoginRequiredMixin, ListView):
 class PartoCreateView(LoginRequiredMixin, CreateView):
     model = Parto
     template_name = "clinica/partos/formulario.html"
-    fields = [
-        "paciente",
-        "fecha_hora",
-        "tipo_parto",
-        "sala",
-        "complicaciones",
-        "duracion_trabajo_parto_min",
-        "personal_responsable",
-    ]
+    form_class = PartoForm
     success_url = reverse_lazy("clinica:parto_list")
 
     def get_initial(self):
@@ -138,6 +130,13 @@ class PartoCreateView(LoginRequiredMixin, CreateView):
             except Paciente.DoesNotExist:
                 pass
         return initial
+    
+class PartoUpdateView(LoginRequiredMixin, UpdateView):
+    model = Parto
+    template_name = "clinica/partos/formulario.html"
+    form_class = PartoForm
+    success_url = reverse_lazy("clinica:parto_list")
+
     
 
 class RecienNacidoListView(LoginRequiredMixin, ListView):
