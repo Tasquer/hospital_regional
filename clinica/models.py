@@ -163,6 +163,29 @@ class Parto(models.Model):
         choices=TipoPartoChoices.choices,
         default=TipoPartoChoices.VAGINAL,
     )
+    class PosicionPartoChoices(models.TextChoices):
+        SEMISENTADA = "semisentada", _("Semisentada")
+        SENTADA = "sentada", _("Sentada")
+        LITOTOMIA = "litotomia", _("Litotomía")
+        CUADRUPEDA = "cuadrupeda", _("Cuadrúpeda")
+        DE_PIE = "de_pie", _("De pie")
+        CUCLILLA = "cuclilla", _("Cuclilla")
+        OTRO = "otro", _("Otro")
+
+    posicion_parto = models.CharField(
+        _("Posición durante el parto"),
+        max_length=20,
+        choices=PosicionPartoChoices.choices,
+        blank=True,
+    )
+
+    posicion_parto_otro = models.CharField(
+        _("Detalle de posición (si 'Otro')"),
+        max_length=100,
+        blank=True,
+    )
+
+        
     sala = models.CharField(_("Sala / pabellón"), max_length=50, blank=True)
     complicaciones = models.TextField(_("Complicaciones"), blank=True)
     duracion_trabajo_parto_min = models.PositiveIntegerField(
