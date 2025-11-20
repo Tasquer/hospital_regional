@@ -20,6 +20,7 @@ urlpatterns = [
     
     path("partos/", views.PartoListView.as_view(), name="parto_list"),
     path("partos/nuevo/", views.PartoCreateView.as_view(), name="parto_create"),
+    path("partos/<int:pk>/", views.PartoDetailView.as_view(), name="parto_detail"),
     path("partos/<int:pk>/editar/", views.PartoUpdateView.as_view(), name="parto_update"),
 
     path(
@@ -42,4 +43,7 @@ urlpatterns = [
         views.RecienNacidoDetailView.as_view(),
         name="recien_nacido_detail",
     ),
+
+    path("altas/nuevo/", views.AltaCreateView.as_view(), name="alta_create"),
+    path("altas/<int:pk>/editar/", views.AltaUpdateView.as_view(), name="alta_update"),
 ]

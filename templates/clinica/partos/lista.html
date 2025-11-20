@@ -23,7 +23,8 @@
               <th class="py-3 pl-6 pr-8 sm:pl-8">Madre</th>
               <th class="px-6 py-3">Fecha y hora</th>
               <th class="px-6 py-3">Tipo de parto</th>
-              <th class="px-6 py-3">Profesional responsable</th>
+              <th class="px-6 py-3">Profesional</th>
+              <th class="px-6 py-3">Alta</th>
               <th class="py-3 pl-6 pr-6 text-right sm:pr-8">Acciones</th>
             </tr>
           </thead>
@@ -37,7 +38,7 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-200">
-                  {{ parto.fecha_hora }}
+                  {{ parto.fecha_hora|date:"d/m/Y H:i" }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-200">
                   {{ parto.get_tipo_parto_display }}
@@ -45,12 +46,40 @@
                 <td class="px-6 py-4 text-sm text-gray-200">
                   {{ parto.personal_responsable|default:"—" }}
                 </td>
+                <td class="px-6 py-4 text-sm">
+                  {% if parto.alta_registrada %}
+                    <span class="inline-flex items-center rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-300">Alta registrada</span>
+                  {% else %}
+                    <span class="inline-flex items-center rounded-full bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-300">Pendiente</span>
+                  {% endif %}
+                </td>
                 <td class="py-4 pl-6 pr-6 text-right text-sm font-semibold sm:pr-8">
-                  <div class="flex justify-end gap-4 text-indigo-300">
-                    <a href="{% url 'clinica:paciente_trazabilidad' parto.paciente.pk %}" class="hover:text-white">
-                      Ver trazabilidad
+                  <div class="flex flex-wrap justify-end gap-3 text-indigo-200">
+                    <a href="{% url 'clinica:parto_detail' parto.pk %}"
+                      class="rounded-full border border-white/10 px-3 py-1 text-xs hover:border-indigo-400 hover:text-white">
+                      Ver detalle
                     </a>
-                    <a href="{% url 'clinica:parto_update' parto.pk %}" class="hover:text-white">
+                    <a href="{% url 'clinica:recien_nacido_create' %}?parto={{ parto.pk }}"
+                      class="rounded-full border border-white/10 px-3 py-1 text-xs hover:border-indigo-400 hover:text-white">
+                      Agregar RN
+                    </a>
+                    <a href="{% url 'clinica:paciente_trazabilidad' parto.paciente.pk %}"
+                      class="rounded-full border border-white/10 px-3 py-1 text-xs hover:border-indigo-400 hover:text-white">
+                      Trazabilidad
+                    </a>
+                    {% if parto.alta_registrada %}
+                      <a href="{% url 'clinica:alta_update' parto.alta_registrada.pk %}"
+                        class="rounded-full border border-white/10 px-3 py-1 text-xs hover:border-indigo-400 hover:text-white">
+                        Editar alta
+                      </a>
+                    {% else %}
+                      <a href="{% url 'clinica:alta_create' %}?parto={{ parto.pk }}"
+                        class="rounded-full border border-amber-400/40 px-3 py-1 text-xs text-amber-200 hover:border-amber-300">
+                        Registrar alta
+                      </a>
+                    {% endif %}
+                    <a href="{% url 'clinica:parto_update' parto.pk %}"
+                      class="rounded-full border border-white/10 px-3 py-1 text-xs hover:border-indigo-400 hover:text-white">
                       Editar
                     </a>
                   </div>
@@ -58,7 +87,7 @@
               </tr>
             {% empty %}
               <tr>
-                <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-400">
+                <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-400">
                   No hay partos registrados.
                 </td>
               </tr>

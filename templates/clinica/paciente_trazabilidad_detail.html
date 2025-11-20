@@ -11,7 +11,7 @@
         Ficha de trazabilidad de paciente
       </h1>
       <p class="text-sm text-gray-400">
-        Trazabilidad madre – parto – recién nacido – alta clínica.
+        Madre → parto → recién nacido → alta clínica.
       </p>
     </div>
     <a href="{% url 'clinica:paciente_list' %}"
@@ -20,160 +20,207 @@
     </a>
   </header>
 
-  <div class="space-y-6">
-    <!-- Datos de la madre -->
-    <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20 space-y-4">
-      <h2 class="text-lg font-semibold text-white">Datos de la madre</h2>
-      <dl class="grid gap-4 text-sm sm:grid-cols-3">
-        <div>
-          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Nombre</dt>
-          <dd class="mt-1 text-sm text-gray-100">{{ paciente.nombre_completo }}</dd>
-        </div>
-        <div>
-          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">RUT</dt>
-          <dd class="mt-1 text-sm text-gray-100">{{ paciente.rut }}</dd>
-        </div>
-        <div>
-          <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Fecha de nacimiento</dt>
-          <dd class="mt-1 text-sm text-gray-100">{{ paciente.fecha_nacimiento }}</dd>
-        </div>
-      </dl>
+  <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20">
+    <h2 class="text-lg font-semibold text-white">Datos de la madre</h2>
+    <dl class="mt-4 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Nombre</dt>
+        <dd class="mt-1 text-sm text-gray-100">{{ paciente.nombre_completo }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">RUT</dt>
+        <dd class="mt-1 text-sm text-gray-100">{{ paciente.rut }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Fecha de nacimiento</dt>
+        <dd class="mt-1 text-sm text-gray-100">{{ paciente.fecha_nacimiento|date:"d/m/Y" }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Teléfono</dt>
+        <dd class="mt-1 text-sm text-gray-100">{{ paciente.telefono|default:"Sin registro" }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Dirección</dt>
+        <dd class="mt-1 text-sm text-gray-100">{{ paciente.direccion|default:"Sin registro" }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Estado civil</dt>
+        <dd class="mt-1 text-sm text-gray-100">{{ paciente.get_estado_civil_display|default:"Sin registro" }}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20 space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-white">Partos asociados</h2>
+      <a href="{% url 'clinica:parto_create' %}?paciente={{ paciente.pk }}" class="text-sm font-semibold text-indigo-300 hover:text-white">Registrar nuevo parto →</a>
     </div>
 
-    <!-- Partos y recién nacidos -->
-    <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20 space-y-4">
-      <h2 class="text-lg font-semibold text-white">Partos y recién nacidos</h2>
-
-      {% if trazabilidad %}
-        <div class="space-y-6">
-          {% for item in trazabilidad %}
-            <article class="rounded-2xl border border-white/10 bg-slate-950/70 p-4 space-y-4">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="text-base font-semibold text-white">
-                  Parto {{ forloop.counter }}
-                </h3>
-                <p class="text-xs text-gray-400">
-                  {{ item.parto.fecha_hora }}
-                </p>
+    {% if trazabilidad %}
+      <div class="space-y-6">
+        {% for parto in trazabilidad %}
+          <article class="rounded-2xl border border-white/10 bg-slate-950/70 p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p class="text-sm text-gray-400">Parto {{ forloop.counter }}</p>
+                <h3 class="text-xl font-semibold text-white">{{ parto.fecha_hora|date:"d/m/Y H:i" }}</h3>
+                <p class="text-sm text-gray-300">{{ parto.get_tipo_parto_display }}</p>
               </div>
+              <div class="flex flex-wrap items-center gap-2">
+                {% if parto.complicaciones %}
+                  <span class="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-semibold text-rose-200">Con complicaciones</span>
+                {% else %}
+                  <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200">Sin complicaciones</span>
+                {% endif %}
+                {% if parto.alta_registrada %}
+                  <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200">Alta registrada</span>
+                {% else %}
+                  <span class="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-200">Alta pendiente</span>
+                {% endif %}
+              </div>
+            </div>
 
-              <!-- Datos del parto -->
-              <dl class="grid gap-4 text-sm sm:grid-cols-2">
-                <div>
-                  <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Tipo de parto</dt>
-                  <dd class="mt-1 text-sm text-gray-100">{{ item.parto.get_tipo_parto_display }}</dd>
-                </div>
-                <div>
-                  <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Profesional responsable</dt>
-                  <dd class="mt-1 text-sm text-gray-100">
-                    {{ item.parto.personal_responsable|default:"—" }}
-                  </dd>
-                </div>
-                <div>
-                  <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Sala / pabellón</dt>
-                  <dd class="mt-1 text-sm text-gray-100">
-                    {{ item.parto.sala|default:"Sin registro" }}
-                  </dd>
-                </div>
-                <div>
-                  <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Complicaciones</dt>
-                  <dd class="mt-1 text-sm text-gray-100">
-                    {{ item.parto.complicaciones|default:"Sin registro" }}
-                  </dd>
-                </div>
-              </dl>
+            <dl class="grid gap-4 text-sm md:grid-cols-2">
+              <div>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Profesional</dt>
+                <dd class="mt-1 text-gray-100">
+                  {% if parto.personal_responsable %}
+                    {{ parto.personal_responsable.get_full_name|default:parto.personal_responsable }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Sala / pabellón</dt>
+                <dd class="mt-1 text-gray-100">{{ parto.sala|default:"Sin registro" }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Posición</dt>
+                <dd class="mt-1 text-gray-100">{{ parto.get_posicion_parto_display|default:"Sin registro" }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Duración trabajo parto</dt>
+                <dd class="mt-1 text-gray-100">
+                  {% if parto.duracion_trabajo_parto_min %}
+                    {{ parto.duracion_trabajo_parto_min }} min
+                  {% else %}
+                    Sin registro
+                  {% endif %}
+                </dd>
+              </div>
+            </dl>
+            {% if parto.complicaciones %}
+              <p class="text-sm text-gray-300"><span class="font-semibold">Complicaciones:</span> {{ parto.complicaciones }}</p>
+            {% endif %}
 
-              <!-- Recién nacidos -->
-              <div class="border-t border-white/5 pt-3 space-y-2">
+            <div class="flex flex-wrap gap-3 text-xs font-semibold">
+              <a href="{% url 'clinica:parto_detail' parto.pk %}" class="rounded-full border border-white/15 px-3 py-1 text-indigo-200 hover:text-white">Ver detalle</a>
+              <a href="{% url 'clinica:recien_nacido_create' %}?parto={{ parto.pk }}" class="rounded-full border border-white/15 px-3 py-1 text-indigo-200 hover:text-white">Agregar RN</a>
+              {% if parto.alta_registrada %}
+                <a href="{% url 'clinica:alta_update' parto.alta_registrada.pk %}" class="rounded-full border border-white/15 px-3 py-1 text-indigo-200 hover:text-white">Editar alta</a>
+              {% else %}
+                <a href="{% url 'clinica:alta_create' %}?parto={{ parto.pk }}" class="rounded-full border border-amber-300/50 px-3 py-1 text-amber-200 hover:border-amber-200">Registrar alta</a>
+              {% endif %}
+            </div>
+
+            <div class="border-t border-white/5 pt-4 space-y-3">
+              <div class="flex items-center justify-between">
                 <h4 class="text-sm font-semibold text-white">Recién nacidos</h4>
-                {% if item.recien_nacidos %}
+                <span class="text-xs text-gray-400">{{ parto.recien_nacidos.all|length }} registrado(s)</span>
+              </div>
+              {% with recien_nacidos=parto.recien_nacidos.all %}
+                {% if recien_nacidos %}
                   <div class="grid gap-3 md:grid-cols-2">
-                    {% for rn in item.recien_nacidos %}
-                      <div class="rounded-xl bg-slate-900/80 p-3 border border-white/5">
-                        <p class="text-sm font-semibold text-gray-100">
-                          {{ rn.identificador }} · {{ rn.sexo }}
-                        </p>
-                        <p class="text-xs text-gray-300">
-                          Peso: {{ rn.peso_gramos }} g · Talla: {{ rn.talla_cm }} cm
-                        </p>
-                        <p class="text-xs text-gray-300">
-                          APGAR: {{ rn.apgar_1_min }}/{{ rn.apgar_5_min }}
-                        </p>
-                        {% if rn.condicion_inicial %}
-                          <p class="mt-1 text-xs text-gray-400">
-                            {{ rn.condicion_inicial }}
-                          </p>
+                    {% for rn in recien_nacidos %}
+                    <div class="rounded-2xl border border-white/10 bg-slate-900/70 p-3 space-y-2">
+                      <div class="flex items-center justify-between">
+                        <p class="text-sm font-semibold text-white">{{ rn.identificador }}</p>
+                        {% if rn.apgar1 is not None and rn.apgar1 < 7 %}
+                          <span class="rounded-full bg-rose-500/20 px-2.5 py-0.5 text-[0.65rem] font-semibold text-rose-200">APGAR 1' {{ rn.apgar1 }}</span>
+                        {% else %}
+                          <span class="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[0.65rem] font-semibold text-emerald-200">APGAR 1' {{ rn.apgar1|default:"-" }}</span>
                         {% endif %}
                       </div>
+                      <p class="text-xs text-gray-400">Sexo: {{ rn.get_sexo_display }}</p>
+                      <p class="text-xs text-gray-400">Peso {{ rn.peso_gramos }} g · Talla {{ rn.talla_cm }} cm</p>
+                      <p class="text-xs text-gray-400">APGAR 5' {{ rn.apgar5|default:"-" }}</p>
+                      {% if rn.derivacion %}
+                        <p class="text-xs text-gray-500">Derivación: {{ rn.derivacion }}</p>
+                      {% endif %}
+                      <a href="{% url 'clinica:recien_nacido_detail' rn.pk %}" class="text-xs font-semibold text-indigo-300 hover:text-white">Ver ficha →</a>
+                    </div>
                     {% endfor %}
                   </div>
                 {% else %}
-                  <p class="text-sm text-gray-300">
-                    No hay recién nacidos registrados para este parto.
-                  </p>
+                  <div class="rounded-2xl border border-dashed border-white/10 bg-slate-900/40 p-4 text-sm text-gray-400">
+                    Aún no se registran recién nacidos para este parto. <a href="{% url 'clinica:recien_nacido_create' %}?parto={{ parto.pk }}" class="font-semibold text-indigo-300 hover:text-white">Registrar RN →</a>
+                  </div>
                 {% endif %}
-              </div>
+              {% endwith %}
+            </div>
 
-              <!-- Alta clínica -->
-              <div class="border-t border-white/5 pt-3 space-y-2">
+            <div class="border-t border-white/5 pt-4 space-y-2">
+              <div class="flex items-center justify-between">
                 <h4 class="text-sm font-semibold text-white">Alta clínica</h4>
-                {% if item.alta %}
-                  <dl class="grid gap-4 text-sm sm:grid-cols-2">
-                    <div>
-                      <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Fecha de alta</dt>
-                      <dd class="mt-1 text-sm text-gray-100">{{ item.alta.fecha_alta }}</dd>
-                    </div>
-                    <div>
-                      <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Tipo de alta</dt>
-                      <dd class="mt-1 text-sm text-gray-100">
-                        {{ item.alta.get_tipo_alta_display }}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Profesional responsable</dt>
-                      <dd class="mt-1 text-sm text-gray-100">
-                        {{ item.alta.profesional_responsable|default:"—" }}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt class="text-xs font-semibold uppercase tracking-wide text-gray-400">Requiere seguimiento</dt>
-                      <dd class="mt-1 text-sm text-gray-100">
-                        {{ item.alta.requiere_seguimiento|yesno:"Sí,No" }}
-                      </dd>
-                    </div>
-                  </dl>
-                  {% if item.alta.condicion_egreso %}
-                    <p class="text-sm text-gray-300">
-                      <span class="font-semibold">Condición al egreso:</span>
-                      {{ item.alta.condicion_egreso }}
-                    </p>
-                  {% endif %}
-                  {% if item.alta.proxima_cita %}
-                    <p class="text-sm text-gray-300">
-                      <span class="font-semibold">Próxima cita:</span>
-                      {{ item.alta.proxima_cita }}
-                    </p>
-                  {% endif %}
-                  {% if item.alta.observaciones %}
-                    <p class="text-sm text-gray-400">
-                      {{ item.alta.observaciones }}
-                    </p>
-                  {% endif %}
+                {% if parto.alta_registrada %}
+                  <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200">Completada</span>
                 {% else %}
-                  <p class="text-sm text-gray-300">
-                    No se ha registrado alta clínica para este parto.
-                  </p>
+                  <span class="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-200">Pendiente</span>
                 {% endif %}
               </div>
-            </article>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p class="text-sm text-gray-300">
-          Este paciente no tiene partos registrados.
-        </p>
-      {% endif %}
-    </div>
+              {% if parto.alta_registrada %}
+                <dl class="grid gap-3 text-sm md:grid-cols-2">
+                  <div>
+                    <dt class="text-xs uppercase tracking-wide text-gray-400">Fecha de alta</dt>
+                    <dd class="mt-1 text-gray-100">{{ parto.alta_registrada.fecha_alta|date:"d/m/Y H:i" }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs uppercase tracking-wide text-gray-400">Tipo de alta</dt>
+                    <dd class="mt-1 text-gray-100">{{ parto.alta_registrada.get_tipo_alta_display }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs uppercase tracking-wide text-gray-400">Profesional</dt>
+                    <dd class="mt-1 text-gray-100">
+                      {% if parto.alta_registrada.profesional_responsable %}
+                        {{ parto.alta_registrada.profesional_responsable.get_full_name|default:parto.alta_registrada.profesional_responsable }}
+                      {% else %}
+                        —
+                      {% endif %}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs uppercase tracking-wide text-gray-400">Próxima cita</dt>
+                    <dd class="mt-1 text-gray-100">
+                      {% if parto.alta_registrada.proxima_cita %}
+                        {{ parto.alta_registrada.proxima_cita|date:"d/m/Y" }}
+                      {% else %}
+                        Sin registro
+                      {% endif %}
+                    </dd>
+                  </div>
+                </dl>
+                <p class="text-sm text-gray-300">
+                  <span class="font-semibold">Condición:</span>
+                  <span class="whitespace-pre-line">{{ parto.alta_registrada.condicion_egreso }}</span>
+                </p>
+                {% if parto.alta_registrada.observaciones %}
+                  <p class="text-sm text-gray-400">{{ parto.alta_registrada.observaciones }}</p>
+                {% endif %}
+                {% if parto.alta_registrada.requiere_seguimiento %}
+                  <p class="text-xs font-semibold text-amber-300">Requiere seguimiento posterior.</p>
+                {% endif %}
+              {% else %}
+                <p class="text-sm text-gray-400">Sin alta registrada.</p>
+                <a href="{% url 'clinica:alta_create' %}?parto={{ parto.pk }}" class="text-sm font-semibold text-amber-300 hover:text-white">Registrar alta →</a>
+              {% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm text-gray-300">Este paciente no tiene partos registrados.</p>
+    {% endif %}
   </div>
 
   {% include 'components/mensajes.html' %}

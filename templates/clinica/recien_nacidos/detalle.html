@@ -2,7 +2,7 @@
 
 {% block content_main %}
 <section class="space-y-6 text-white max-w-4xl">
-  <div class="flex items-center justify-between gap-4">
+  <div class="flex flex-wrap items-center justify-between gap-4">
     <div>
       <p class="text-sm font-semibold text-indigo-300 uppercase tracking-wide">
         Módulo clínico
@@ -12,10 +12,20 @@
         Información clínica y vínculo con el parto y la madre.
       </p>
     </div>
-    <a href="{% url 'clinica:recien_nacido_update' rn.pk %}"
-       class="rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400">
-      Editar
-    </a>
+    <div class="flex flex-wrap gap-3 text-sm font-semibold">
+      <a href="{% url 'clinica:recien_nacido_list' %}"
+         class="rounded-full border border-white/15 px-4 py-2 text-gray-200 hover:bg-white/5">
+        ← Listado
+      </a>
+      <a href="{% url 'clinica:parto_detail' rn.parto.pk %}"
+         class="rounded-full border border-white/15 px-4 py-2 text-gray-200 hover:bg-white/5">
+        Ver parto
+      </a>
+      <a href="{% url 'clinica:recien_nacido_update' rn.pk %}"
+         class="rounded-full bg-indigo-500 px-4 py-2 text-white shadow-sm hover:bg-indigo-400">
+        Editar
+      </a>
+    </div>
   </div>
 
   <div class="grid gap-6 md:grid-cols-2">
@@ -38,9 +48,16 @@
           <dt class="text-gray-400">Talla</dt>
           <dd class="text-gray-100">{{ rn.talla_cm }} cm</dd>
         </div>
-        <div class="flex justify-between">
-          <dt class="text-gray-400">APGAR</dt>
-          <dd class="text-gray-100">{{ rn.apgar_1_min }}/{{ rn.apgar_5_min }}</dd>
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <dt class="text-gray-400">APGAR 1' / 5'</dt>
+            <dd class="text-gray-100">{{ rn.apgar1|default:"-" }} / {{ rn.apgar5|default:"-" }}</dd>
+          </div>
+          {% if rn.apgar1 is not None and rn.apgar1 < 7 %}
+            <span class="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-semibold text-rose-200">Alerta 1 minuto</span>
+          {% else %}
+            <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200">Estable</span>
+          {% endif %}
         </div>
         <div class="space-y-1">
           <dt class="text-gray-400">Condición inicial</dt>
@@ -54,28 +71,41 @@
     </div>
 
     <div class="space-y-4 bg-gray-900/40 p-5 rounded-2xl ring-1 ring-white/10">
-    <h2 class="text-sm font-semibold text-gray-200">Parto asociado</h2>
-    <p class="text-sm text-gray-100">
-        Madre: {{ rn.parto.paciente.nombre_completo|default:rn.parto.paciente }}
-    </p>
-    <p class="text-sm text-gray-100">
-        Fecha y hora del parto:
-        {{ rn.parto.fecha|date:"d/m/Y H:i" }}
-    </p>
-    <p class="text-sm text-gray-100">
-        Profesional responsable:
-        {{ rn.parto.personal_responsable.get_full_name|default:rn.parto.personal_responsable.username }}
-    </p>
-    <p class="text-sm text-gray-100">
-        Alta registrada:
-        {% if rn.parto.alta %}Sí{% else %}No{% endif %}
-    </p>
-    <div class="pt-2">
-        <a href="/clinica/partos/"
-        class="text-sm font-semibold text-indigo-300 hover:text-white">
-        Ver partos
-        </a>
-    </div>
+      <h2 class="text-sm font-semibold text-gray-200">Parto asociado</h2>
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-gray-400">Madre</dt>
+          <dd class="text-gray-100 text-right">{{ rn.parto.paciente.nombre_completo }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-400">Fecha y hora</dt>
+          <dd class="text-gray-100">{{ rn.parto.fecha_hora|date:"d/m/Y H:i" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-400">Tipo</dt>
+          <dd class="text-gray-100">{{ rn.parto.get_tipo_parto_display }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-400">Profesional</dt>
+          <dd class="text-gray-100">
+            {% if rn.parto.personal_responsable %}
+              {{ rn.parto.personal_responsable.get_full_name|default:rn.parto.personal_responsable }}
+            {% else %}
+              —
+            {% endif %}
+          </dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-400">Alta registrada</dt>
+          <dd class="text-gray-100">
+            {% if rn.parto.alta_registrada %}Sí{% else %}No{% endif %}
+          </dd>
+        </div>
+      </dl>
+      <div class="flex flex-col gap-2 text-sm font-semibold">
+        <a href="{% url 'clinica:parto_detail' rn.parto.pk %}" class="text-indigo-300 hover:text-white">Ver detalle del parto →</a>
+        <a href="{% url 'clinica:paciente_trazabilidad' rn.parto.paciente.pk %}" class="text-indigo-300 hover:text-white">Ficha de trazabilidad →</a>
+      </div>
     </div>
 
 

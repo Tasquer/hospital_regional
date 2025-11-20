@@ -34,23 +34,23 @@
   </div>
 
 
-  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
-      <h2 class="text-sm font-semibold text-gray-400">Total Partos</h2>
+      <h2 class="text-sm font-semibold text-gray-400">Pacientes con partos (período)</h2>
+      <p class="mt-2 text-4xl font-bold text-white">{{ total_pacientes|intcomma }}</p>
+    </div>
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
+      <h2 class="text-sm font-semibold text-gray-400">Total de partos</h2>
       <p class="mt-2 text-4xl font-bold text-white">{{ total_partos|intcomma }}</p>
     </div>
-
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
-      <h2 class="text-sm font-semibold text-gray-400">Total Recién Nacidos</h2>
+      <h2 class="text-sm font-semibold text-gray-400">Recién nacidos registrados</h2>
       <p class="mt-2 text-4xl font-bold text-white">{{ total_recien_nacidos|intcomma }}</p>
     </div>
-
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
-      <h2 class="text-sm font-semibold text-gray-400">Partos con Complicaciones</h2>
+      <h2 class="text-sm font-semibold text-gray-400">Partos con complicaciones</h2>
       <p class="mt-2 text-4xl font-bold text-red-400">{{ total_complicaciones|intcomma }}</p>
     </div>
-
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
       <h2 class="text-sm font-semibold text-gray-400">Promedio APGAR (5 min)</h2>
       <p class="mt-2 text-4xl font-bold text-white">{{ promedio_apgar_rn|floatformat:1|default:"N/A" }}</p>
@@ -60,12 +60,12 @@
   <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl lg:col-span-2">
-      <h2 class="text-lg font-semibold text-white">Gráfico: Distribución Tipo de Parto</h2>
+      <h2 class="text-lg font-semibold text-white">Distribución por tipo de parto</h2>
       <div id="chart_tipo_parto" class="mt-4" style="width: 100%; height: 350px;"></div>
     </div>
 
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Resumen Tipo de Parto</h2>
+      <h2 class="text-lg font-semibold text-white">Resumen por tipo</h2>
       {% for item in distribucion_tipo_parto %}
         <div class="flex justify-between items-center">
           <span class="text-lg capitalize text-white">{{ item.tipo_display }}</span>
@@ -80,7 +80,7 @@
   <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Desviación Estándar (Vitales RN)</h2>
+      <h2 class="text-lg font-semibold text-white">Desviación estándar (vitales RN)</h2>
       <div class="flex justify-between items-center">
         <span class="text-lg capitalize text-white">Peso (grs)</span>
         <span class="text-xl font-semibold text-white">± {{ stddev_peso_rn|floatformat:0|intcomma|default:"N/A" }}</span>
@@ -96,7 +96,7 @@
     </div>
 
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Promedios Vitales RN</h2>
+      <h2 class="text-lg font-semibold text-white">Promedios vitales RN</h2>
       <div class="flex justify-between items-center">
         <span class="text-lg capitalize text-white">Peso (grs)</span>
         <span class="text-xl font-semibold text-white">{{ promedio_peso_rn|floatformat:0|intcomma|default:"N/A" }}</span>
@@ -112,7 +112,7 @@
     </div>
     
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Distribución Sexo RN</h2>
+      <h2 class="text-lg font-semibold text-white">Recién nacidos por sexo</h2>
       {% for item in distribucion_sexo_rn %}
         <div class="flex justify-between items-center">
           <span class="text-lg capitalize text-white">{{ item.sexo_display }}</span>
@@ -127,7 +127,7 @@
   <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
     
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Pacientes por Pueblo Originario</h2>
+      <h2 class="text-lg font-semibold text-white">Pueblo originario (top 3)</h2>
       {% for item in distribucion_pueblos|slice:":3" %} <div class="flex justify-between items-center">
           <span class="text-lg capitalize text-white">{{ item.pueblo_display }}</span>
           <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
@@ -138,7 +138,7 @@
     </div>
 
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Pacientes por Nivel Educacional</h2>
+      <h2 class="text-lg font-semibold text-white">Nivel educacional (top 3)</h2>
       {% for item in distribucion_educacion|slice:":3" %} <div class="flex justify-between items-center">
           <span class="text-lg capitalize text-white">{{ item.educacion_display }}</span>
           <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
@@ -149,7 +149,7 @@
     </div>
 
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Pacientes por Estado Civil</h2>
+      <h2 class="text-lg font-semibold text-white">Estado civil (top 3)</h2>
       {% for item in distribucion_estado_civil|slice:":3" %} <div class="flex justify-between items-center">
           <span class="text-lg capitalize text-white">{{ item.estado_civil_display }}</span>
           <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
@@ -160,14 +160,14 @@
     </div>
 
     <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Pacientes por Nacionalidad</h2>
+      <h2 class="text-lg font-semibold text-white">Pacientes por nacionalidad</h2>
       {% for item in distribucion_nacionalidad %}
         <div class="flex justify-between items-center">
           <span class="text-lg capitalize text-white">{{ item.nacionalidad_display }}</span>
           <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
         </div>
       {% empty %}
-         <p class="text-gray-400">No hay datos demográficos.</sppan>
+        <p class="text-gray-400">No hay datos demográficos.</p>
       {% endfor %}
     </div>
   </div>

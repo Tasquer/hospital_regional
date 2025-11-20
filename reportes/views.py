@@ -2,14 +2,19 @@
 
 import json
 from datetime import datetime
+from statistics import pstdev
+
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import Avg, Count, Q
 from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-# Importamos StdDev (Desviación Estándar)
-from django.db.models import Count, Avg, StdDev, Q
 from clinica.models import Paciente, Parto, RecienNacido
 
-class ReportesObstetriciaView(LoginRequiredMixin, TemplateView):
+class ReportesObstetriciaView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "reportes/dashboard_obstetricia.html"
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_staff or user.is_superuser
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -54,6 +59,7 @@ class ReportesObstetriciaView(LoginRequiredMixin, TemplateView):
         # 1. Totales Generales
         context["total_partos"] = partos_qs.count()
         context["total_recien_nacidos"] = rn_qs.count()
+        context["total_pacientes"] = pacientes_qs.count()
 
         # 2. Distribución Tipo de Parto (y datos para Gráfico)
         tipo_parto_map = dict(Parto.TipoPartoChoices.choices)
@@ -83,18 +89,24 @@ class ReportesObstetriciaView(LoginRequiredMixin, TemplateView):
         # 4. Estadísticas Vitales RN (Promedios Y Desviación Estándar - Punto 1)
         stats_vitales = rn_qs.aggregate(
             Avg('peso_gramos'),
-            StdDev('peso_gramos'), 
             Avg('talla_cm'),
-            StdDev('talla_cm'), 
-            Avg('apgar_5_min'),
-            StdDev('apgar_5_min')
+            Avg('apgar5'),
         )
         context["promedio_peso_rn"] = stats_vitales.get('peso_gramos__avg')
-        context["stddev_peso_rn"] = stats_vitales.get('peso_gramos__stddev')
         context["promedio_talla_rn"] = stats_vitales.get('talla_cm__avg')
-        context["stddev_talla_rn"] = stats_vitales.get('talla_cm__stddev')
-        context["promedio_apgar_rn"] = stats_vitales.get('apgar_5_min__avg')
-        context["stddev_apgar_rn"] = stats_vitales.get('apgar_5_min__stddev')
+        context["promedio_apgar_rn"] = stats_vitales.get('apgar5__avg')
+
+        rn_stats = list(
+            rn_qs.values_list("peso_gramos", "talla_cm", "apgar5")
+        )
+
+        def _stddev(index):
+            serie = [row[index] for row in rn_stats if row[index] is not None]
+            return pstdev(serie) if len(serie) > 1 else None
+
+        context["stddev_peso_rn"] = _stddev(0)
+        context["stddev_talla_rn"] = _stddev(1)
+        context["stddev_apgar_rn"] = _stddev(2)
 
         # 5. Complicaciones
         # ¡LÓGICA CORREGIDA! Tu modelo usa TextField, no BooleanField.

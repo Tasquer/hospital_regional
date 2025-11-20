@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import CasoClinico, Paciente, RecienNacido, Parto
+from .models import CasoClinico, Paciente, RecienNacido, Parto, Alta
 
 
 INPUT_CLASS = "w-full rounded-2xl border border-gray-200/70 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400/40"
@@ -45,12 +45,21 @@ class PacienteForm(BaseClinicaForm):
         model = Paciente
         fields = [
             "rut",
+            "dv",
+            "nombres",
+            "apellido_paterno",
+            "apellido_materno",
             "nombre_completo",
             "fecha_nacimiento",
             "sexo",
             "telefono",
             "email",
             "direccion",
+            "estado_civil",
+            "nivel_educacional",
+            "consultorio",
+            "nacionalidad_catalogo",
+            "pueblo_originario_catalogo",
             "activo",
         ]
         widgets = {
@@ -58,22 +67,62 @@ class PacienteForm(BaseClinicaForm):
         }
 
 class PartoForm(BaseClinicaForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # El flujo obstétrico requiere registrar siempre el profesional responsable.
+        self.fields["personal_responsable"].required = True
+
     class Meta:
         model = Parto
         fields = [
             "paciente",
             "fecha_hora",
+            "fecha_ingreso",
             "tipo_parto",
+            "tipo_parto_catalogo",
             "posicion_parto",
             "posicion_parto_otro",
             "sala",
+            "edad_materna_parto",
+            "paridad",
+            "control_prenatal",
+            "preeclampsia_severa",
+            "eclampsia",
+            "sepsis",
+            "infeccion_ovular",
+            "detalle_otra_patologia",
+            "ligadura_tardia_cordon",
+            "contacto_piel_piel",
+            "duracion_contacto_min",
+            "lactancia_primera_hora",
+            "alojamiento_conjunto",
+            "vdrl_positivo",
+            "hepatitis_b_positivo",
+            "vih_positivo",
             "complicaciones",
+            "observaciones",
             "duracion_trabajo_parto_min",
             "personal_responsable",
         ]
         widgets = {
             "fecha_hora": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "fecha_ingreso": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        required_fields = [
+            "paciente",
+            "fecha_hora",
+            "tipo_parto",
+            "personal_responsable",
+        ]
+
+        for field_name in required_fields:
+            if not cleaned_data.get(field_name):
+                self.add_error(field_name, "Este campo es obligatorio.")
+
+        return cleaned_data
 
 
 class RecienNacidoForm(BaseClinicaForm):
@@ -85,11 +134,64 @@ class RecienNacidoForm(BaseClinicaForm):
             "sexo",
             "peso_gramos",
             "talla_cm",
-            "apgar_1_min",
-            "apgar_5_min",
+            "perimetro_cefalico_cm",
+            "apgar1",
+            "apgar5",
+            "edad_gestacional_semanas",
+            "reanimacion",
+            "tiene_malformacion",
+            "malformacion_detalle",
             "condicion_inicial",
             "derivacion",
+            "diagnostico_alta",
         ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        for field in ("apgar1", "apgar5"):
+            value = cleaned_data.get(field)
+            if value is not None and not 0 <= value <= 10:
+                self.add_error(field, "El puntaje APGAR debe estar entre 0 y 10.")
+
+        for field in ("peso_gramos", "talla_cm"):
+            value = cleaned_data.get(field)
+            if value is not None and value <= 0:
+                self.add_error(field, "Debe ser mayor a 0.")
+
+        edad_gestacional = cleaned_data.get("edad_gestacional_semanas")
+        if edad_gestacional is not None and not 20 <= edad_gestacional <= 45:
+            self.add_error(
+                "edad_gestacional_semanas",
+                "La edad gestacional debe estar entre 20 y 45 semanas.",
+            )
+
+        return cleaned_data
+
+
+class AltaForm(BaseClinicaForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields["parto"].disabled = True
+
+    class Meta:
+        model = Alta
+        fields = [
+            "parto",
+            "fecha_alta",
+            "tipo_alta",
+            "condicion_egreso",
+            "requiere_seguimiento",
+            "proxima_cita",
+            "observaciones",
+        ]
+        widgets = {
+            "fecha_alta": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "proxima_cita": forms.DateInput(attrs={"type": "date"}),
+            "condicion_egreso": forms.Textarea(attrs={"rows": 4}),
+            "observaciones": forms.Textarea(attrs={"rows": 3}),
+        }
 
 
 class CasoClinicoForm(BaseClinicaForm):

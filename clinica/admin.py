@@ -44,7 +44,7 @@ class PartoAdmin(admin.ModelAdmin):
 
 @admin.register(RecienNacido)
 class RecienNacidoAdmin(admin.ModelAdmin):
-    list_display = ("identificador", "parto", "sexo", "peso_gramos", "apgar_1_min", "apgar_5_min")
+    list_display = ("identificador", "parto", "sexo", "peso_gramos", "apgar1", "apgar5")
     list_filter = ("sexo", "parto__tipo_parto")
     search_fields = ("identificador", "parto__paciente__nombre_completo", "parto__paciente__rut")
     ordering = ("parto", "identificador")

@@ -1,9 +1,17 @@
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
+from django.db.models import Prefetch
+from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from .forms import CasoClinicoForm, PacienteForm, RecienNacidoForm, PartoForm
-from .models import CasoClinico, Paciente, Parto, RecienNacido
+from .forms import (
+    AltaForm,
+    CasoClinicoForm,
+    PacienteForm,
+    RecienNacidoForm,
+    PartoForm,
+)
+from .models import Alta, CasoClinico, Paciente, Parto, RecienNacido
 
 
 class PacienteListView(LoginRequiredMixin, ListView):
@@ -80,24 +88,25 @@ class PacienteTrazabilidadDetailView(LoginRequiredMixin, DetailView):
     template_name = "clinica/paciente_trazabilidad_detail.html"
     context_object_name = "paciente"
 
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                Prefetch(
+                    "partos",
+                    queryset=
+                    Parto.objects.select_related("personal_responsable", "alta")
+                    .prefetch_related("recien_nacidos"),
+                )
+            )
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        paciente = self.object
-        partos = paciente.partos.select_related("personal_responsable").all()
-
-        trazabilidad = []
-        for parto in partos:
-            recien_nacidos = list(parto.recien_nacidos.all())
-            alta = getattr(parto, "alta", None)
-            trazabilidad.append(
-                {
-                    "parto": parto,
-                    "recien_nacidos": recien_nacidos,
-                    "alta": alta,
-                }
-            )
-
-        context["trazabilidad"] = trazabilidad
+        partos = self.object.partos.all()
+        context["trazabilidad"] = partos
+        context["partos"] = partos
         return context
 
 
@@ -109,7 +118,8 @@ class PartoListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         qs = (
-            Parto.objects.select_related("paciente", "personal_responsable")
+            Parto.objects.select_related("paciente", "personal_responsable", "alta")
+            .prefetch_related("recien_nacidos")
             .order_by("-fecha_hora")
         )
         return qs
@@ -130,12 +140,33 @@ class PartoCreateView(LoginRequiredMixin, CreateView):
             except Paciente.DoesNotExist:
                 pass
         return initial
-    
+
+    def get_success_url(self):
+        return reverse("clinica:parto_detail", args=[self.object.pk])
+
+
 class PartoUpdateView(LoginRequiredMixin, UpdateView):
     model = Parto
     template_name = "clinica/partos/formulario.html"
     form_class = PartoForm
     success_url = reverse_lazy("clinica:parto_list")
+
+    def get_success_url(self):
+        return reverse("clinica:parto_detail", args=[self.object.pk])
+
+
+class PartoDetailView(LoginRequiredMixin, DetailView):
+    model = Parto
+    template_name = "clinica/partos/detalle.html"
+    context_object_name = "parto"
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .select_related("paciente", "personal_responsable", "alta")
+            .prefetch_related("recien_nacidos")
+        )
 
     
 
@@ -164,8 +195,14 @@ class RecienNacidoCreateView(LoginRequiredMixin, CreateView):
         initial = super().get_initial()
         parto_id = self.request.GET.get("parto")
         if parto_id:
-            initial["parto"] = parto_id
+            try:
+                initial["parto"] = Parto.objects.get(pk=parto_id)
+            except Parto.DoesNotExist:
+                pass
         return initial
+
+    def get_success_url(self):
+        return reverse("clinica:parto_detail", args=[self.object.parto_id])
 
 
 class RecienNacidoUpdateView(RecienNacidoCreateView, UpdateView):
@@ -181,8 +218,68 @@ class RecienNacidoDetailView(LoginRequiredMixin, DetailView):
         return (
             super()
             .get_queryset()
-            .select_related("parto", "parto__paciente")
+            .select_related("parto", "parto__paciente", "parto__alta")
         )
+
+
+class AltaCreateView(LoginRequiredMixin, CreateView):
+    model = Alta
+    template_name = "clinica/altas/formulario.html"
+    form_class = AltaForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        parto_id = self.request.GET.get("parto")
+        if parto_id:
+            try:
+                initial["parto"] = Parto.objects.get(pk=parto_id)
+            except Parto.DoesNotExist:
+                pass
+        return initial
+
+    def form_valid(self, form):
+        parto = form.cleaned_data.get("parto")
+        if not parto:
+            form.add_error("parto", "Debes seleccionar un parto válido.")
+            return self.form_invalid(form)
+
+        if Alta.objects.filter(parto=parto).exists():
+            form.add_error("parto", "Este parto ya cuenta con un alta registrada.")
+            return self.form_invalid(form)
+
+        if not parto.recien_nacidos.exists():
+            form.add_error(None, "No se puede registrar un alta sin recién nacidos asociados.")
+            return self.form_invalid(form)
+
+        if not form.instance.profesional_responsable:
+            form.instance.profesional_responsable = self.request.user
+
+        messages.success(self.request, "Alta registrada correctamente.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("clinica:paciente_trazabilidad", args=[self.object.parto.paciente_id])
+
+
+class AltaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Alta
+    template_name = "clinica/altas/formulario.html"
+    form_class = AltaForm
+
+    def form_valid(self, form):
+        parto = form.instance.parto
+        if not parto.recien_nacidos.exists():
+            form.add_error(None, "No se puede editar el alta porque el parto no tiene recién nacidos.")
+            return self.form_invalid(form)
+
+        if not form.instance.profesional_responsable:
+            form.instance.profesional_responsable = self.request.user
+
+        messages.success(self.request, "Alta actualizada correctamente.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("clinica:paciente_trazabilidad", args=[self.object.parto.paciente_id])
 
 
 # Create your views here.
