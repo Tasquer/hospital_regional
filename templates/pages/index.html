@@ -4,102 +4,293 @@
 
 {% block content_main %} 
           
-  <div class="sm:h-dvh">
+  <div class="space-y-6">
     
-    <h2 class="text-zinc-400 text-center pb-3 text-2xl">Distribución de Tipos de Parto</h2>
-    
-    <div class="w-full h-[600px]" id="chart_home"></div>
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-white">Control de Turno</h1>
+        <p class="text-sm text-gray-400 mt-1" id="fecha-actual">Cargando...</p>
+      </div>
+      <a href="{% url 'reportes:dashboard_obstetricia' %}" 
+          class="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 flex items-center gap-2">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        Ver reportes completos
+      </a>
+    </div>
 
-    <!-- Activity list -->
-    <div class="border-t border-white/10 pt-11">
-      <h2 class="px-4 text-base font-semibold leading-7 text-white sm:px-6 lg:px-8">Últimos usuarios conectados</h2>
-      <table aria-labelledby="tablaUsuarios" aria-describedby="tablaUsuariosConectados" class="mt-6 w-full whitespace-nowrap text-left">
-        <colgroup>
-          <col class="w-full sm:w-4/12">
-          <col class="lg:w-4/12">
-          <col class="lg:w-2/12">
-          <col class="lg:w-1/12">
-          <col class="lg:w-1/12">
-        </colgroup>
-        <thead class="border-b border-white/10 text-sm leading-6 text-white">
-          <tr>
-            <th scope="col" class="py-2 pl-4 pr-8 font-semibold sm:pl-6 lg:pl-8">Usuario</th>
-            <th scope="col" class="hidden py-2 pl-0 pr-8 font-semibold sm:table-cell">Correo</th>
-            <th scope="col" class="hidden py-2 pl-0 pr-4 text-right font-semibold sm:pr-8 sm:text-left lg:pr-20 sm:table-cell">Cargo</th>
-            <th scope="col" class="py-2 pl-0 pr-4 text-right font-semibold sm:pr-6 lg:pr-8">Última conexión</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-white/5">
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      
+      <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg relative">
+        <div class="p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-indigo-100">Partos Hoy</p>
+              <p class="mt-1 text-4xl font-semibold text-white">{{ partos_hoy|intcomma }}</p>
+            </div>
+            <div class="rounded-full bg-white/20 p-3">
+              <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center gap-2 text-xs text-indigo-100">
+            <span class="flex items-center">
+              <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Última 24 hrs
+            </span>
+          </div>
+        </div>
+        {% if parto_reciente %}
+        <div class="absolute top-3 right-3">
+          <span class="flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+          </span>
+        </div>
+        {% endif %}
+      </div>
 
-          {% if object_list  %}
-            {% for user in object_list  %}
-            
-              <tr>
-                <td class="py-4 pl-4 pr-8 sm:pl-6 lg:pl-8">
-                  <div class="flex items-center gap-x-4">
-                    <img src="{{ user.profile.image.url }}" alt="perfil" class="h-8 w-8 rounded-full bg-gray-800">
-                    <div class="truncate text-sm font-medium leading-6 text-white">{{ user.username }}</div>
-                  </div>
-                </td>
-                <td class="hidden py-4 pl-0 pr-4 sm:table-cell sm:pr-8">
-                  <div class="flex gap-x-3">
-                    <div class="font-mono text-sm leading-6 text-gray-400">{{ user.email }}</div>
-                  </div>
-                </td>
-                <td class="hidden py-4 pl-0 pr-4 text-sm leading-6 sm:pr-8 lg:pr-20 sm:table-cell">
+      <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 shadow-lg">
+        <div class="p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-pink-100">RN Hoy</p>
+              <p class="mt-1 text-4xl font-semibold text-white">{{ rn_hoy|intcomma }}</p>
+            </div>
+            <div class="rounded-full bg-white/20 p-3">
+              <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <div class="mt-3 text-xs text-pink-100">
+            {% if rn_hoy > 0 %}
+              Peso prom: {{ peso_promedio_hoy|floatformat:0|default:"N/A" }} g
+            {% else %}
+              Sin registros aún
+            {% endif %}
+          </div>
+        </div>
+      </div>
 
-                  <div class="flex items-center justify-end gap-x-2 sm:justify-start">
-                    <div class="hidden text-white sm:block">
-                      {% if user.profile.position_FK.permission_code != "RESTRICTED" %}
-                        <span class="inline-flex flex-shrink-0 items-center rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-                          {{ user.profile.position_FK.user_position }}
-                        </span>
-                      {% else %}
-                        <span class="inline-flex flex-shrink-0 items-center rounded-full bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-green-600/20">
-                            {{ user.profile.position_FK.user_position }}
-                        </span> 
-                      {% endif %}
-                    </div>
-                  </div>
+      <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg">
+        <div class="p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-amber-100">Alertas Activas</p>
+              <p class="mt-1 text-4xl font-semibold text-white">{{ alertas_activas|intcomma }}</p>
+            </div>
+            <div class="rounded-full bg-white/20 p-3">
+              <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+          </div>
+          <div class="mt-3 text-xs text-amber-100">
+            Requieren atención inmediata
+          </div>
+        </div>
+      </div>
 
-                </td>
-                <td class="py-4 pl-0 pr-4 text-right text-sm leading-6 text-gray-400 sm:pr-6 lg:pr-8">
-                
-                    {% if user.id in active_users %}
-                      <div class="flex items-center justify-end gap-x-2 sm:justify-end">
-                      <div class="flex-none rounded-full p-1 text-green-400 bg-green-400/10">
-                        <div class="h-1.5 w-1.5 rounded-full bg-current"></div>
-                      </div>
-                      <div class=" text-white ">Activo</div>
-                    </div>
-                    {% else %}
-                        {{ user.profile.last_activity|naturaltime }}
-                    {% endif %}
-              
-                </td>
-              </tr>
-              
-            {% endfor %} 
-          {% endif %} 
+      <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg">
+        <div class="p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-emerald-100">Pendientes Alta</p>
+              <p class="mt-1 text-4xl font-semibold text-white">{{ partos_sin_alta|intcomma }}</p>
+            </div>
+            <div class="rounded-full bg-white/20 p-3">
+              <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+          </div>
+          <div class="mt-3 text-xs text-emerald-100">
+            Últimas 48 horas
+          </div>
+        </div>
+      </div>
 
-        </tbody>
-      </table>
+    </div>
+
+    {% if alertas_criticas %}
+    <div class="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-6 shadow-xl">
+      <div class="flex items-start gap-4">
+        <div class="rounded-full bg-rose-500/20 p-3">
+          <svg class="h-6 w-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold text-white mb-2">⚠️ Atención Inmediata Requerida</h3>
+          <div class="space-y-2">
+            {% for alerta in alertas_criticas %}
+            <div class="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-rose-500/20">
+              <div class="flex items-center gap-3">
+                <span class="text-rose-400 font-mono text-sm">{{ alerta.tipo }}</span>
+                <span class="text-white text-sm">{{ alerta.descripcion }}</span>
+              </div>
+              <a href="{{ alerta.url }}" class="text-rose-300 hover:text-white text-sm font-semibold">
+                Ver detalle →
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      
+      <div class="lg:col-span-2 rounded-2xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
+        <div class="mb-4 flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-white">Actividad del Turno</h2>
+            <p class="text-sm text-gray-400">Últimas 24 horas por hora</p>
+          </div>
+          <div class="text-sm text-gray-400">
+            <span class="inline-flex items-center gap-1">
+              <span class="h-2 w-2 rounded-full bg-indigo-500"></span>
+              Partos registrados
+            </span>
+          </div>
+        </div>
+        <div class="h-[300px]" id="chart_turno"></div>
+      </div>
+
+      <div class="space-y-4">
+        
+        <div class="rounded-2xl border border-white/10 bg-gray-900/80 p-5 shadow-xl">
+          <h3 class="text-sm font-semibold text-white mb-4">Estado de RN - Hoy</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="h-2 w-2 rounded-full bg-rose-500"></div>
+                <span class="text-sm text-gray-300">APGAR < 7</span>
+              </div>
+              <span class="text-lg font-bold text-white">{{ rn_apgar_bajo_hoy }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="h-2 w-2 rounded-full bg-amber-500"></div>
+                <span class="text-sm text-gray-300">Bajo peso</span>
+              </div>
+              <span class="text-lg font-bold text-white">{{ rn_bajo_peso_hoy }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="h-2 w-2 rounded-full bg-emerald-500"></div>
+                <span class="text-sm text-gray-300">Normales</span>
+              </div>
+              <span class="text-lg font-bold text-white">{{ rn_normales_hoy }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-gray-900/80 p-5 shadow-xl">
+          <h3 class="text-sm font-semibold text-white mb-4">Tipos de Parto - Hoy</h3>
+          <div class="space-y-3">
+            {% for tipo in tipos_parto_hoy %}
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-300">{{ tipo.nombre }}</span>
+              <div class="flex items-center gap-2">
+                <div class="h-1.5 bg-gray-700 rounded-full w-20 overflow-hidden">
+                  <div class="h-full bg-indigo-500" style="width: '{{ tipo.porcentaje }}%';"></div>
+                </div>
+                <span class="text-sm font-bold text-white w-6">{{ tipo.total }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-gray-900/80 p-5 shadow-xl">
+          <h3 class="text-sm font-semibold text-white mb-4">Acciones Rápidas</h3>
+          <div class="space-y-2">
+            <a href="{% url 'clinica:parto_create' %}" 
+               class="flex items-center gap-2 p-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Registrar Parto
+            </a>
+            <a href="{% url 'clinica:parto_list' %}" 
+               class="flex items-center gap-2 p-3 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              Ver Partos Activos
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="border-t border-white/10 pt-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-semibold text-white">Personal Conectado</h2>
+        <span class="text-sm text-gray-400">{{ active_users|length }} activo(s)</span>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {% for user in object_list %}
+        <div class="flex flex-col items-center p-3 rounded-lg bg-white/5 border border-white/10">
+          <img src="{{ user.profile.image.url }}" alt="perfil" class="h-12 w-12 rounded-full bg-gray-800 mb-2">
+          <p class="text-sm font-medium text-white truncate w-full text-center">{{ user.username }}</p>
+          {% if user.id in active_users %}
+            <span class="mt-1 inline-flex items-center gap-1 text-xs text-emerald-400">
+              <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+              Activo
+            </span>
+          {% else %}
+            <span class="mt-1 text-xs text-gray-500">Offline</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
     </div>
 
     {% include 'components/mensajes.html' %}
 
   </div>
 
+  <script>
+    // Actualizar fecha y hora en tiempo real
+    function actualizarFecha() {
+      const ahora = new Date();
+      const opciones = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      };
+      document.getElementById('fecha-actual').textContent = 
+        ahora.toLocaleDateString('es-CL', opciones);
+    }
+    actualizarFecha();
+    setInterval(actualizarFecha, 1000);
+  </script>
+
 {% endblock content_main %}
 
 {% block javascript %}
-
   <script>
-  // Pasamos los datos del contexto de Django a variables globales de JavaScript
-  window.graficoLabels = JSON.parse('{{ grafico_labels|escapejs }}');
-  window.graficoData = JSON.parse('{{ grafico_data|escapejs }}');
+    const dashboardData = {
+      turno: {
+        labels: JSON.parse('{{ turno_labels|escapejs }}'),
+        data: JSON.parse('{{ turno_data|escapejs }}')
+      }
+    };
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"></script>
-  <script defer src="{% static 'js/grafico_home.js' %}"></script>
+  <script defer src="{% static 'js/dashboard_turno.js' %}"></script>
 {% endblock javascript %}
-

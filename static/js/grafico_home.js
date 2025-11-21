@@ -1,100 +1,177 @@
-// Espera a que la página se cargue completamente (buena práctica)
-document.addEventListener('DOMContentLoaded', (event) => {
-  
-  // 1. Localiza el 'div' del gráfico
-  const chartDom = document.getElementById('chart_home');
-  // 2. Inicializa la librería ECharts en ese div
-  const myChart = echarts.init(chartDom);
-  let option;
+// static/js/dashboard_turno.js
 
-  // 3. Define la configuración del NUEVO gráfico
-  option = {
-    // Información al pasar el mouse
+document.addEventListener('DOMContentLoaded', () => {
+  
+  // Verificar que ECharts esté disponible
+  if (typeof echarts === 'undefined') {
+    console.error('ECharts no está cargado');
+    return;
+  }
+
+  // Gráfico de Actividad del Turno (Últimas 24 horas por hora)
+  const chartTurno = echarts.init(document.getElementById('chart_turno'), 'dark');
+  
+  const optionTurno = {
+    backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
+      backgroundColor: 'rgba(17, 24, 39, 0.95)',
+      borderColor: '#374151',
+      textStyle: { color: '#f3f4f6' },
       axisPointer: {
-        type: 'shadow' // Sombra sobre la barra
-      }
-    },
-
-    // Caja de herramientas (la mantenemos, es útil)
-    toolbox: {
-      feature: {
-        dataView: { show: true, readOnly: false, title: 'Ver Datos' },
-        magicType: { show: true, type: ['line', 'bar'], title: { line: 'Línea', bar: 'Barras' } },
-        restore: { show: true, title: 'Restaurar' },
-        saveAsImage: { show: true, title: 'Guardar' }
+        type: 'cross',
+        label: {
+          backgroundColor: '#6366f1'
+        }
       },
-      iconStyle: {
-        borderColor: '#fff' // Íconos en blanco
+      formatter: function(params) {
+        const param = params[0];
+        return `<div style="padding: 8px;">
+          <div style="font-weight: bold; margin-bottom: 4px;">${param.name}</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-block; width: 10px; height: 10px; background: #6366f1; border-radius: 50%;"></span>
+            <span>${param.value} parto(s)</span>
+          </div>
+        </div>`;
       }
     },
-
-    // Ajuste de márgenes
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '3%',
+      bottom: '12%',
+      top: '10%',
       containLabel: true
     },
-
-    // Eje X (Categorías)
     xAxis: {
       type: 'category',
-      // USA LOS DATOS DE DJANGO
-      data: window.graficoLabels || ['(Sin Datos)'], // Usa los datos o un marcador de posición
+      boundaryGap: false,
+      data: dashboardData.turno.labels,
       axisLabel: {
-        color: '#fff' // Texto en blanco
+        color: '#9ca3af',
+        fontSize: 11,
+        interval: 0,
+        rotate: 45,
+        formatter: function(value) {
+          // Mostrar solo la hora
+          return value.split(' ')[1] || value;
+        }
+      },
+      axisLine: {
+        lineStyle: { color: '#374151' }
+      },
+      axisTick: {
+        show: false
       }
     },
-
-    // Eje Y (Valores)
     yAxis: {
       type: 'value',
-      name: 'Total de Partos',
+      name: 'Partos',
       nameTextStyle: {
-        color: "#fff",
-        fontWeight: "bold"
+        color: '#9ca3af',
+        fontSize: 12,
+        padding: [0, 0, 0, 10]
       },
       axisLabel: {
-        color: '#fff' // Texto en blanco
-      }
-    },
-
-    // Definición de la Serie de Datos
-    series: [
-      {
-        name: 'Total de Partos',
-        type: 'bar', // Tipo barra
-        barWidth: '60%',
-        // USA LOS DATOS DE DJANGO
-        data: window.graficoData || [0], // Usa los datos o un marcador de posición
-        // Estilo visual
-        itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#83bff6' },
-            { offset: 0.5, color: '#188df0' },
-            { offset: 1, color: '#188df0' }
-          ])
-        },
-        emphasis: {
-          itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#2378f7' },
-              { offset: 0.7, color: '#2378f7' },
-              { offset: 1, color: '#83bff6' }
-            ])
-          }
+        color: '#9ca3af',
+        fontSize: 11
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#374151',
+          type: 'dashed'
         }
+      },
+      minInterval: 1 // Solo números enteros
+    },
+    series: [{
+      name: 'Partos',
+      type: 'line',
+      smooth: true,
+      symbol: 'circle',
+      symbolSize: 8,
+      data: dashboardData.turno.data,
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(99, 102, 241, 0.5)' },
+            { offset: 1, color: 'rgba(99, 102, 241, 0.05)' }
+          ]
+        }
+      },
+      lineStyle: {
+        width: 3,
+        color: '#6366f1',
+        shadowColor: 'rgba(99, 102, 241, 0.5)',
+        shadowBlur: 10,
+        shadowOffsetY: 5
+      },
+      itemStyle: {
+        color: '#6366f1',
+        borderWidth: 2,
+        borderColor: '#fff',
+        shadowColor: 'rgba(99, 102, 241, 0.5)',
+        shadowBlur: 5
+      },
+      emphasis: {
+        focus: 'series',
+        itemStyle: {
+          color: '#818cf8',
+          borderColor: '#fff',
+          borderWidth: 3,
+          shadowBlur: 10,
+          shadowColor: 'rgba(99, 102, 241, 0.8)'
+        }
+      },
+      // Marcar el último punto de forma especial
+      markPoint: {
+        symbol: 'pin',
+        symbolSize: 50,
+        data: [{
+          type: 'max',
+          name: 'Pico',
+          itemStyle: {
+            color: '#f59e0b'
+          }
+        }]
+      },
+      // Línea promedio
+      markLine: {
+        silent: true,
+        lineStyle: {
+          color: '#10b981',
+          type: 'dashed',
+          width: 2
+        },
+        label: {
+          show: true,
+          position: 'end',
+          formatter: 'Promedio: {c}',
+          color: '#10b981',
+          fontSize: 11
+        },
+        data: [{
+          type: 'average',
+          name: 'Promedio'
+        }]
       }
-    ]
+    }]
   };
 
-  // 4. Aplica la configuración al gráfico
-  option && myChart.setOption(option);
+  chartTurno.setOption(optionTurno);
 
-  // 5. Hace que el gráfico se redibuje si cambia el tamaño de la ventana
-  window.addEventListener('resize', function() {
-    myChart.resize();
+  // Responsive
+  window.addEventListener('resize', () => {
+    chartTurno.resize();
   });
+
+  // Auto-actualizar cada 5 minutos (opcional)
+  // setInterval(() => {
+  //   location.reload();
+  // }, 300000);
+
 });
