@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Obstétrico</title>
+    <style>
+        @page { size: letter portrait; margin: 2cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 11px; color: #333; }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 5px; }
+        h2 { color: #16a085; margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px; font-size: 14px; }
+        .meta { text-align: center; color: #7f8c8d; margin-bottom: 20px; font-size: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        th { background-color: #ecf0f1; color: #333; font-weight: bold; text-align: left; padding: 6px; border: 1px solid #bdc3c7; }
+        td { padding: 6px; border: 1px solid #bdc3c7; }
+        .summary-box { background-color: #f9f9f9; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px; }
+        .summary-row { margin-bottom: 5px; }
+        .label { font-weight: bold; color: #7f8c8d; width: 150px; display: inline-block; }
+        .value { font-weight: bold; color: #2c3e50; }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Gestión Obstétrica</h1>
+    <div class="meta">Generado el: {% now "d/m/Y H:i" %} <br> Periodo: {{ fecha_inicio|default:"Histórico" }} - {{ fecha_final|default:"Actualidad" }}</div>
+    <div class="summary-box">
+        <div class="summary-row"><span class="label">Total Partos:</span> <span class="value">{{ total_partos }}</span></div>
+        <div class="summary-row"><span class="label">Total Recién Nacidos:</span> <span class="value">{{ total_recien_nacidos }}</span></div>
+        <div class="summary-row"><span class="label">Complicaciones:</span> <span class="value" style="color: #c0392b;">{{ total_complicaciones }}</span></div>
+    </div>
+
+    <h2>Estadísticas Vitales (Promedios)</h2>
+    <table>
+        <thead><tr><th>Indicador</th><th>Promedio</th><th>Desviación Estándar</th></tr></thead>
+        <tbody>
+            <tr><td>Peso Recién Nacido</td><td>{{ promedio_peso_rn|floatformat:0 }} g</td><td>± {{ stddev_peso_rn|floatformat:0 }}</td></tr>
+            <tr><td>Talla</td><td>{{ promedio_talla_rn|floatformat:1 }} cm</td><td>± {{ stddev_talla_rn|floatformat:1 }}</td></tr>
+            <tr><td>APGAR (5 min)</td><td>{{ promedio_apgar_rn|floatformat:1 }}</td><td>± {{ stddev_apgar_rn|floatformat:1 }}</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Datos del Parto</h2>
+    <table style="border: none;">
+        <tr style="border: none;">
+            <td style="border: none; vertical-align: top; width: 50%; padding-right: 10px;">
+                <h3>Tipo de Parto</h3>
+                <table>
+                    <thead><tr><th>Tipo</th><th>Cant.</th></tr></thead>
+                    <tbody>{% for item in distribucion_tipo_parto %}<tr><td>{{ item.tipo_display }}</td><td>{{ item.total }}</td></tr>{% endfor %}</tbody>
+                </table>
+            </td>
+            <td style="border: none; vertical-align: top; width: 50%;">
+                <h3>Posición del Parto</h3>
+                <table>
+                    <thead><tr><th>Posición</th><th>Cant.</th></tr></thead>
+                    <tbody>{% for item in distribucion_posicion_parto %}<tr><td>{{ item.posicion_display }}</td><td>{{ item.total }}</td></tr>{% endfor %}</tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <h2>Perfil Demográfico</h2>
+    <table style="border: none;">
+        <tr style="border: none;">
+            <td style="border: none; vertical-align: top; width: 50%; padding-right: 10px;">
+                <h3>Pueblo Originario</h3>
+                <table><thead><tr><th>Pueblo</th><th>Cant.</th></tr></thead><tbody>{% for item in distribucion_pueblos %}<tr><td>{{ item.display }}</td><td>{{ item.total }}</td></tr>{% endfor %}</tbody></table>
+            </td>
+            <td style="border: none; vertical-align: top; width: 50%;">
+                <h3>Nivel Educacional</h3>
+                <table><thead><tr><th>Nivel</th><th>Cant.</th></tr></thead><tbody>{% for item in distribucion_educacion %}<tr><td>{{ item.display }}</td><td>{{ item.total }}</td></tr>{% endfor %}</tbody></table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

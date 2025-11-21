@@ -1,236 +1,356 @@
 {% extends 'components/Layout/base_extendido.html' %}
-{% load humanize %} {% block content_main %}
-<section class="space-y-6 text-white">
+{% load humanize %}
+
+{% block content_main %}
+<section class="space-y-6 text-white relative">
   
-  <div>
-    <p class="text-sm font-semibold text-indigo-300 uppercase tracking-wide">Módulo de Reportes</p>
-    <h1 class="text-3xl font-bold text-white">Dashboard de Obstetricia</h1>
-    <p class="text-sm text-gray-400">Indicadores clave de Partos y Recién Nacidos (REM A24).</p>
+  <div class="flex justify-between items-end">
+    <div>
+      <p class="text-sm font-semibold text-indigo-300 uppercase tracking-wide">Módulo de Reportes</p>
+      <h1 class="text-3xl font-bold text-white">Dashboard de Obstetricia</h1>
+    </div>
+    <a href="." class="flex items-center justify-center w-10 h-10 bg-gray-800 border border-white/10 rounded-full hover:bg-gray-700 transition group shadow-lg" title="Recargar datos">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-400 group-hover:text-white">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+        </svg>
+    </a>
   </div>
 
   <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
-    <h2 class="text-lg font-semibold text-white mb-4">Filtrar por Fecha de Creación</h2>
-    <form method="GET" action="{% url 'reportes:dashboard_obstetricia' %}" class="flex flex-col gap-4 sm:flex-row sm:items-end">
+    <h2 class="text-lg font-semibold text-white mb-4">Filtro General y Exportación</h2>
+    <form method="GET" action="{% url 'reportes:dashboard_obstetricia' %}" class="flex flex-col gap-4 sm:flex-row sm:items-end flex-wrap">
       
       <div>
         <label for="fecha_inicio" class="block text-sm font-medium text-gray-300">Fecha Inicio</label>
         <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ fecha_inicio|default:'' }}" 
                class="mt-1 block w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
       </div>
-      
       <div>
         <label for="fecha_final" class="block text-sm font-medium text-gray-300">Fecha Final</label>
         <input type="date" name="fecha_final" id="fecha_final" value="{{ fecha_final|default:'' }}" 
                class="mt-1 block w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
       </div>
       
-      <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-        Filtrar
-      </button>
-      <a href="{% url 'reportes:dashboard_obstetricia' %}" class="block text-center rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 sm:w-auto">
-        Limpiar
-      </a>
+      <div class="flex gap-2 mt-2 sm:mt-0">
+          <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">Filtrar</button>
+          <a href="{% url 'reportes:dashboard_obstetricia' %}" class="rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 pt-2 text-center">Limpiar</a>
+      </div>
+
+      <div class="flex gap-2 mt-2 sm:mt-0 sm:ml-auto border-l border-gray-700 pl-0 sm:pl-4 pt-4 sm:pt-0 w-full sm:w-auto">
+          <a href="{% url 'reportes:exportar_excel' %}?fecha_inicio={{ request.GET.fecha_inicio }}&fecha_final={{ request.GET.fecha_final }}" target="_blank" class="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 w-full sm:w-auto justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg> Excel
+          </a>
+          <a href="{% url 'reportes:exportar_pdf' %}?fecha_inicio={{ request.GET.fecha_inicio }}&fecha_final={{ request.GET.fecha_final }}" target="_blank" class="flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 w-full sm:w-auto justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg> PDF
+          </a>
+      </div>
     </form>
   </div>
 
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
 
-  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
-      <h2 class="text-sm font-semibold text-gray-400">Pacientes con partos (período)</h2>
-      <p class="mt-2 text-4xl font-bold text-white">{{ total_pacientes|intcomma }}</p>
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl transition-all duration-300 hover:border-indigo-500/50" id="card-partos">
+      <div class="flex justify-between items-start">
+          <div><h2 class="text-sm font-semibold text-gray-400">Total Partos</h2><p class="mt-2 text-4xl font-bold text-white">{{ total_partos|intcomma }}</p></div>
+          <button onclick="toggleChart('partos_evolucion', 'line', 'card-partos')" class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-800 border border-white/10 text-indigo-400 hover:bg-indigo-600 hover:text-white transition shadow-lg cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v18h16.5M20.25 12.75l-4.5-4.5-6 6-3.75-3.75" /></svg></button>
+      </div>
+      <div id="expand-partos_evolucion" style="display: none;" class="mt-6 pt-6 border-t border-white/10">
+          <div class="flex space-x-2 mb-4 overflow-x-auto pb-2">
+              <button onclick="loadChartData('partos_evolucion', 7, 'line')" class="px-3 py-1 text-xs rounded-full bg-indigo-600 text-white">7 días</button>
+              <button onclick="loadChartData('partos_evolucion', 30, 'line')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Mes</button>
+              <button onclick="loadChartData('partos_evolucion', 365, 'line')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Año</button>
+              <button onclick="loadChartData('partos_evolucion', 'historic', 'line')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Histórico</button>
+          </div>
+          <div id="chart-partos_evolucion" style="width: 100%; height: 250px;"></div>
+      </div>
     </div>
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
-      <h2 class="text-sm font-semibold text-gray-400">Total de partos</h2>
-      <p class="mt-2 text-4xl font-bold text-white">{{ total_partos|intcomma }}</p>
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl transition-all duration-300 hover:border-pink-500/50" id="card-sexo">
+      <div class="flex justify-between items-start">
+          <div><h2 class="text-sm font-semibold text-gray-400">Total RN</h2><p class="mt-2 text-4xl font-bold text-white">{{ total_recien_nacidos|intcomma }}</p></div>
+          <button onclick="toggleChart('sexo_distribucion', 'pie', 'card-sexo')" class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-800 border border-white/10 text-pink-400 hover:bg-pink-600 hover:text-white transition shadow-lg cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" /></svg></button>
+      </div>
+      <div id="expand-sexo_distribucion" style="display: none;" class="mt-6 pt-6 border-t border-white/10">
+          <div class="flex space-x-2 mb-4 overflow-x-auto pb-2">
+              <button onclick="loadChartData('sexo_distribucion', 7, 'pie')" class="px-3 py-1 text-xs rounded-full bg-pink-600 text-white">7 días</button>
+              <button onclick="loadChartData('sexo_distribucion', 30, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300">Mes</button>
+              <button onclick="loadChartData('sexo_distribucion', 365, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300">Año</button>
+              <button onclick="loadChartData('sexo_distribucion', 'historic', 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Histórico</button>
+          </div>
+          <div id="chart-sexo_distribucion" style="width: 100%; height: 250px;"></div>
+      </div>
     </div>
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
-      <h2 class="text-sm font-semibold text-gray-400">Recién nacidos registrados</h2>
-      <p class="mt-2 text-4xl font-bold text-white">{{ total_recien_nacidos|intcomma }}</p>
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl transition-all duration-300 hover:border-emerald-500/50" id="card-tipo">
+        <div class="flex justify-between items-start">
+            <div><h2 class="text-sm font-semibold text-gray-400">Tipos de Parto</h2>
+                <div class="mt-2 flex flex-col max-h-20 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700">
+                    {% for item in distribucion_tipo_parto %}<span class="text-xs text-gray-300">{{ item.tipo_display }}: <b>{{ item.total }}</b></span>{% endfor %}
+                </div>
+            </div>
+            <button onclick="toggleChart('tipo_parto_distribucion', 'pie', 'card-tipo')" class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-800 border border-white/10 text-emerald-400 hover:bg-emerald-600 hover:text-white transition shadow-lg cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg></button>
+        </div>
+        <div id="expand-tipo_parto_distribucion" style="display: none;" class="mt-6 pt-6 border-t border-white/10">
+            <div class="flex space-x-2 mb-4 overflow-x-auto pb-2">
+                <button onclick="loadChartData('tipo_parto_distribucion', 7, 'pie')" class="px-3 py-1 text-xs rounded-full bg-emerald-600 text-white">7 días</button>
+                <button onclick="loadChartData('tipo_parto_distribucion', 30, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300">Mes</button>
+                <button onclick="loadChartData('tipo_parto_distribucion', 365, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300">Año</button>
+                <button onclick="loadChartData('tipo_parto_distribucion', 'historic', 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Histórico</button>
+            </div>
+            <div id="chart-tipo_parto_distribucion" style="width: 100%; height: 250px;"></div>
+        </div>
     </div>
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
-      <h2 class="text-sm font-semibold text-gray-400">Partos con complicaciones</h2>
-      <p class="mt-2 text-4xl font-bold text-red-400">{{ total_complicaciones|intcomma }}</p>
-    </div>
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl">
-      <h2 class="text-sm font-semibold text-gray-400">Promedio APGAR (5 min)</h2>
-      <p class="mt-2 text-4xl font-bold text-white">{{ promedio_apgar_rn|floatformat:1|default:"N/A" }}</p>
+
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl transition-all duration-300 hover:border-red-500/50" id="card-complicaciones">
+      <div class="flex justify-between items-start">
+        <div><h2 class="text-sm font-semibold text-gray-400">Complicaciones</h2><p class="mt-2 text-4xl font-bold text-red-400">{{ total_complicaciones|intcomma }}</p></div>
+        <button onclick="toggleChart('complicaciones_distribucion', 'pie', 'card-complicaciones')" class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-800 border border-white/10 text-red-400 hover:bg-red-600 hover:text-white transition shadow-lg cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg></button>
+      </div>
+      <div id="expand-complicaciones_distribucion" style="display: none;" class="mt-6 pt-6 border-t border-white/10">
+          <div class="flex space-x-2 mb-4 overflow-x-auto pb-2">
+              <button onclick="loadChartData('complicaciones_distribucion', 7, 'pie')" class="px-3 py-1 text-xs rounded-full bg-red-600 text-white">7 días</button>
+              <button onclick="loadChartData('complicaciones_distribucion', 30, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300">Mes</button>
+              <button onclick="loadChartData('complicaciones_distribucion', 365, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300">Año</button>
+              <button onclick="loadChartData('complicaciones_distribucion', 'historic', 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Histórico</button>
+          </div>
+          <div id="chart-complicaciones_distribucion" style="width: 100%; height: 250px;"></div>
+      </div>
     </div>
   </div>
 
-  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl lg:col-span-2">
-      <h2 class="text-lg font-semibold text-white">Distribución por tipo de parto</h2>
-      <div id="chart_tipo_parto" class="mt-4" style="width: 100%; height: 350px;"></div>
-    </div>
-
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Resumen por tipo</h2>
-      {% for item in distribucion_tipo_parto %}
-        <div class="flex justify-between items-center">
-          <span class="text-lg capitalize text-white">{{ item.tipo_display }}</span>
-          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3 transition-all duration-300 hover:border-teal-500/50" id="card-vitales">
+        <div class="flex justify-between items-start mb-4">
+            <h2 class="text-lg font-semibold text-white">Promedios Vitales RN</h2>
+            <button onclick="toggleChart('vitales_peso_evolucion', 'line', 'card-vitales')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-800 border border-white/10 text-teal-400 hover:bg-teal-600 hover:text-white transition shadow-lg"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z" /></svg></button>
         </div>
-      {% empty %}
-        <p class="text-gray-400">No hay datos de tipo de parto para el rango seleccionado.</p>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Desviación estándar (vitales RN)</h2>
-      <div class="flex justify-between items-center">
-        <span class="text-lg capitalize text-white">Peso (grs)</span>
-        <span class="text-xl font-semibold text-white">± {{ stddev_peso_rn|floatformat:0|intcomma|default:"N/A" }}</span>
-      </div>
-      <div class="flex justify-between items-center">
-        <span class="text-lg capitalize text-white">Talla (cms)</span>
-        <span class="text-xl font-semibold text-white">± {{ stddev_talla_rn|floatformat:1|default:"N/A" }}</span>
-      </div>
-       <div class="flex justify-between items-center">
-        <span class="text-lg capitalize text-white">APGAR (5 min)</span>
-        <span class="text-xl font-semibold text-white">± {{ stddev_apgar_rn|floatformat:1|default:"N/A" }}</span>
-      </div>
-    </div>
-
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Promedios vitales RN</h2>
-      <div class="flex justify-between items-center">
-        <span class="text-lg capitalize text-white">Peso (grs)</span>
-        <span class="text-xl font-semibold text-white">{{ promedio_peso_rn|floatformat:0|intcomma|default:"N/A" }}</span>
-      </div>
-      <div class="flex justify-between items-center">
-        <span class="text-lg capitalize text-white">Talla (cms)</span>
-        <span class="text-xl font-semibold text-white">{{ promedio_talla_rn|floatformat:1|default:"N/A" }}</span>
-      </div>
-       <div class="flex justify-between items-center">
-        <span class="text-lg capitalize text-white">APGAR (5 min)</span>
-        <span class="text-xl font-semibold text-white">{{ promedio_apgar_rn|floatformat:1|default:"N/A" }}</span>
-      </div>
-    </div>
-    
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Recién nacidos por sexo</h2>
-      {% for item in distribucion_sexo_rn %}
-        <div class="flex justify-between items-center">
-          <span class="text-lg capitalize text-white">{{ item.sexo_display }}</span>
-          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
+        <div class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="text-gray-400">Peso</span><span class="text-xl font-bold text-white">{{ promedio_peso_rn|floatformat:0 }}g <span class="text-xs text-gray-500">±{{ stddev_peso_rn|floatformat:0 }}</span></span></div>
+        <div class="flex justify-between items-center border-b border-gray-700 pb-2"><span class="text-gray-400">Talla</span><span class="text-xl font-bold text-white">{{ promedio_talla_rn|floatformat:1 }}cm <span class="text-xs text-gray-500">±{{ stddev_talla_rn|floatformat:1 }}</span></span></div>
+        <div class="flex justify-between items-center"><span class="text-gray-400">APGAR 5'</span><span class="text-xl font-bold text-white">{{ promedio_apgar_rn|floatformat:1 }} <span class="text-xs text-gray-500">±{{ stddev_apgar_rn|floatformat:1 }}</span></span></div>
+        
+        <div id="expand-vitales_peso_evolucion" style="display: none;" class="mt-4 pt-4 border-t border-white/10">
+             <h4 class="text-xs text-teal-400 mb-2 uppercase tracking-widest">Evolución del Peso</h4>
+              <div class="flex space-x-2 mb-2 overflow-x-auto pb-2">
+                  <button onclick="loadChartData('vitales_peso_evolucion', 7, 'line')" class="px-3 py-1 text-xs rounded-full bg-teal-600 text-white">7 días</button>
+                  <button onclick="loadChartData('vitales_peso_evolucion', 30, 'line')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Mes</button>
+                  <button onclick="loadChartData('vitales_peso_evolucion', 365, 'line')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Año</button>
+                  <button onclick="loadChartData('vitales_peso_evolucion', 'historic', 'line')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Histórico</button>
+              </div>
+             <div id="chart-vitales_peso_evolucion" style="width: 100%; height: 200px;"></div>
         </div>
-      {% empty %}
-         <p class="text-gray-400">No hay datos de recién nacidos.</p>
-      {% endfor %}
-    </div>
+      </div>
+
+      <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3 transition-all duration-300 hover:border-indigo-500/50" id="card-posicion">
+        <div class="flex justify-between items-start mb-2">
+            <h2 class="text-lg font-semibold text-white">Posición del Parto</h2>
+            <button onclick="toggleChart('posicion_distribucion', 'bar_horizontal', 'card-posicion')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-800 border border-white/10 text-indigo-400 hover:bg-indigo-600 hover:text-white transition shadow-lg"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg></button>
+        </div>
+        <div class="flex flex-col max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 space-y-2">
+            {% for item in distribucion_posicion_parto %}<div class="flex justify-between items-center"><span class="text-sm text-gray-300 capitalize">{{ item.posicion_display }}</span><div class="flex items-center gap-2"><div class="h-1.5 bg-indigo-900 rounded-full w-20 overflow-hidden"><div class="h-full bg-indigo-500" style="width: {% widthratio item.total total_partos 100 %}%;"></div></div><span class="text-sm font-bold text-white">{{ item.total }}</span></div></div>{% empty %}<p class="text-gray-400 text-sm">No hay datos registrados.</p>{% endfor %}
+        </div>
+        <div id="expand-posicion_distribucion" style="display: none;" class="mt-4 pt-4 border-t border-white/10">
+            <div class="flex space-x-2 mb-2 overflow-x-auto pb-2">
+                  <button onclick="loadChartData('posicion_distribucion', 7, 'bar_horizontal')" class="px-3 py-1 text-xs rounded-full bg-indigo-600 text-white">7 días</button>
+                  <button onclick="loadChartData('posicion_distribucion', 30, 'bar_horizontal')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Mes</button>
+                  <button onclick="loadChartData('posicion_distribucion', 365, 'bar_horizontal')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Año</button>
+                  <button onclick="loadChartData('posicion_distribucion', 'historic', 'bar_horizontal')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Histórico</button>
+            </div>
+             <div id="chart-posicion_distribucion" style="width: 100%; height: 250px;"></div>
+        </div>
+      </div>
   </div>
 
   <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-    
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Pueblo originario (top 3)</h2>
-      {% for item in distribucion_pueblos|slice:":3" %} <div class="flex justify-between items-center">
-          <span class="text-lg capitalize text-white">{{ item.pueblo_display }}</span>
-          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
-        </div>
-      {% empty %}
-         <p class="text-gray-400">No hay datos demográficos.</p>
-      {% endfor %}
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3 relative" id="card-pueblo">
+       <div class="flex justify-between items-center">
+         <h2 class="text-lg font-semibold text-white">Pueblo Originario</h2>
+         <button onclick="toggleChart('pueblo_distribucion', 'pie', 'card-pueblo')" class="w-6 h-6 text-gray-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" /></svg></button>
+       </div>
+       <div class="flex flex-col max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 space-y-1">
+           {% for item in distribucion_pueblos %}<div class="flex justify-between"><span class="text-sm text-gray-400">{{ item.display }}</span><span class="text-white">{{ item.total }}</span></div>{% endfor %}
+       </div>
+       <div id="expand-pueblo_distribucion" style="display: none;" class="mt-2 pt-2 border-t border-white/10">
+            <div class="flex space-x-2 mb-2 overflow-x-auto pb-2">
+                  <button onclick="loadChartData('pueblo_distribucion', 7, 'pie')" class="px-3 py-1 text-xs rounded-full bg-indigo-600 text-white">7 días</button>
+                  <button onclick="loadChartData('pueblo_distribucion', 30, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Mes</button>
+                  <button onclick="loadChartData('pueblo_distribucion', 365, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Año</button>
+                  <button onclick="loadChartData('pueblo_distribucion', 'historic', 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Histórico</button>
+            </div>
+           <div id="chart-pueblo_distribucion" style="width: 100%; height: 200px;"></div>
+       </div>
     </div>
 
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Nivel educacional (top 3)</h2>
-      {% for item in distribucion_educacion|slice:":3" %} <div class="flex justify-between items-center">
-          <span class="text-lg capitalize text-white">{{ item.educacion_display }}</span>
-          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
-        </div>
-      {% empty %}
-         <p class="text-gray-400">No hay datos demográficos.</p>
-      {% endfor %}
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3 relative" id="card-educacion">
+       <div class="flex justify-between items-center">
+         <h2 class="text-lg font-semibold text-white">Educación</h2>
+         <button onclick="toggleChart('educacion_distribucion', 'bar', 'card-educacion')" class="w-6 h-6 text-gray-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg></button>
+       </div>
+       <div class="flex flex-col max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 space-y-1">
+            {% for item in distribucion_educacion %}<div class="flex justify-between"><span class="text-sm text-gray-400">{{ item.display }}</span><span class="text-white">{{ item.total }}</span></div>{% endfor %}
+       </div>
+       <div id="expand-educacion_distribucion" style="display: none;" class="mt-2 pt-2 border-t border-white/10">
+           <div class="flex space-x-2 mb-2 overflow-x-auto pb-2">
+                  <button onclick="loadChartData('educacion_distribucion', 7, 'bar')" class="px-3 py-1 text-xs rounded-full bg-indigo-600 text-white">7 días</button>
+                  <button onclick="loadChartData('educacion_distribucion', 30, 'bar')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Mes</button>
+                  <button onclick="loadChartData('educacion_distribucion', 365, 'bar')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Año</button>
+                  <button onclick="loadChartData('educacion_distribucion', 'historic', 'bar')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Histórico</button>
+            </div>
+           <div id="chart-educacion_distribucion" style="width: 100%; height: 200px;"></div>
+       </div>
     </div>
 
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Estado civil (top 3)</h2>
-      {% for item in distribucion_estado_civil|slice:":3" %} <div class="flex justify-between items-center">
-          <span class="text-lg capitalize text-white">{{ item.estado_civil_display }}</span>
-          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3 relative" id="card-civil">
+       <div class="flex justify-between items-center">
+         <h2 class="text-lg font-semibold text-white">Estado Civil</h2>
+         <button onclick="toggleChart('estado_civil_distribucion', 'pie', 'card-civil')" class="w-6 h-6 text-gray-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" /></svg></button>
+       </div>
+        <div class="flex flex-col max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 space-y-1">
+            {% for item in distribucion_estado_civil %}<div class="flex justify-between"><span class="text-sm text-gray-400">{{ item.display }}</span><span class="text-white">{{ item.total }}</span></div>{% endfor %}
         </div>
-      {% empty %}
-         <p class="text-gray-400">No hay datos demográficos.</p>
-      {% endfor %}
+       <div id="expand-estado_civil_distribucion" style="display: none;" class="mt-2 pt-2 border-t border-white/10">
+           <div class="flex space-x-2 mb-2 overflow-x-auto pb-2">
+                  <button onclick="loadChartData('estado_civil_distribucion', 7, 'pie')" class="px-3 py-1 text-xs rounded-full bg-indigo-600 text-white">7 días</button>
+                  <button onclick="loadChartData('estado_civil_distribucion', 30, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Mes</button>
+                  <button onclick="loadChartData('estado_civil_distribucion', 365, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Año</button>
+                  <button onclick="loadChartData('estado_civil_distribucion', 'historic', 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Histórico</button>
+            </div>
+           <div id="chart-estado_civil_distribucion" style="width: 100%; height: 200px;"></div>
+       </div>
     </div>
 
-    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3">
-      <h2 class="text-lg font-semibold text-white">Pacientes por nacionalidad</h2>
-      {% for item in distribucion_nacionalidad %}
-        <div class="flex justify-between items-center">
-          <span class="text-lg capitalize text-white">{{ item.nacionalidad_display }}</span>
-          <span class="text-xl font-semibold text-white">{{ item.total|intcomma }}</span>
+    <div class="rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl space-y-3 relative" id="card-nacionalidad">
+       <div class="flex justify-between items-center">
+         <h2 class="text-lg font-semibold text-white">Nacionalidad</h2>
+         <button onclick="toggleChart('nacionalidad_distribucion', 'pie', 'card-nacionalidad')" class="w-6 h-6 text-gray-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" /></svg></button>
+       </div>
+        <div class="flex flex-col max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 space-y-1">
+            {% for item in distribucion_nacionalidad %}<div class="flex justify-between"><span class="text-sm text-gray-400">{{ item.display }}</span><span class="text-white">{{ item.total }}</span></div>{% endfor %}
         </div>
-      {% empty %}
-        <p class="text-gray-400">No hay datos demográficos.</p>
-      {% endfor %}
+       <div id="expand-nacionalidad_distribucion" style="display: none;" class="mt-2 pt-2 border-t border-white/10">
+           <div class="flex space-x-2 mb-2 overflow-x-auto pb-2">
+                  <button onclick="loadChartData('nacionalidad_distribucion', 7, 'pie')" class="px-3 py-1 text-xs rounded-full bg-indigo-600 text-white">7 días</button>
+                  <button onclick="loadChartData('nacionalidad_distribucion', 30, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Mes</button>
+                  <button onclick="loadChartData('nacionalidad_distribucion', 365, 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Año</button>
+                  <button onclick="loadChartData('nacionalidad_distribucion', 'historic', 'pie')" class="px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600">Histórico</button>
+            </div>
+           <div id="chart-nacionalidad_distribucion" style="width: 100%; height: 200px;"></div>
+       </div>
     </div>
   </div>
 
 </section>
 {% endblock content_main %}
 
-
 {% block javascript %}
-  {{ block.super }} <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      
-      const chartData = {{ chart_data_tipo_parto|safe }};
-      
-      if (chartData && chartData.length > 0 && typeof echarts !== 'undefined') {
-        
-        var chartDom = document.getElementById('chart_tipo_parto');
-        var myChart = echarts.init(chartDom, 'dark'); // Usamos el tema 'dark'
-        var option;
+  {{ block.super }}
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  
+  <script>
+    const chartInstances = {};
 
-        option = {
-          backgroundColor: 'transparent',
-          tooltip: {
-            trigger: 'item',
-            formatter: '{b}: {c} ({d}%)'
-          },
-          legend: {
-            orient: 'vertical',
-            left: 'left',
-            top: 'center',
-            textStyle: {
-                color: '#ccc'
-            }
-          },
-          series: [
-            {
-              name: 'Tipo de Parto',
-              type: 'pie',
-              radius: ['40%', '70%'],
-              center: ['65%', '50%'],
-              data: chartData,
-              emphasis: {
-                itemStyle: {
-                  shadowBlur: 10,
-                  shadowOffsetX: 0,
-                  shadowColor: 'rgba(255, 255, 255, 0.3)'
+    function toggleChart(metric, type, cardId) {
+        // Verificar si ECharts cargó correctamente
+        if (typeof echarts === 'undefined') {
+            alert("Error: No se pudo cargar la librería de gráficos. Revisa tu conexión a internet.");
+            return;
+        }
+
+        const expandArea = document.getElementById(`expand-${metric}`);
+        if (expandArea.style.display === 'none') {
+            expandArea.style.display = 'block';
+            // Pequeño retraso para asegurar que el div se muestre antes de dibujar
+            setTimeout(() => loadChartData(metric, 7, type), 50);
+        } else {
+            expandArea.style.display = 'none';
+        }
+    }
+
+    function loadChartData(metric, days, type) {
+        const chartDom = document.getElementById(`chart-${metric}`);
+        
+        // Actualizar botones visualmente
+        const container = chartDom.parentElement;
+        const buttons = container.querySelectorAll('button');
+        buttons.forEach(btn => {
+             if (btn.innerText.includes(days) || (days===30 && btn.innerText.includes('Mes')) || (days===365 && btn.innerText.includes('Año')) || (days==='historic' && btn.innerText.includes('Histórico'))) {
+                 btn.classList.remove('bg-gray-700', 'text-gray-300');
+                 btn.classList.add('bg-indigo-600', 'text-white');
+             } else {
+                 btn.classList.add('bg-gray-700', 'text-gray-300');
+                 btn.classList.remove('bg-indigo-600', 'text-white');
+             }
+        });
+
+        if (chartInstances[metric]) chartInstances[metric].dispose();
+        const myChart = echarts.init(chartDom, 'dark');
+        chartInstances[metric] = myChart;
+        
+        myChart.resize();
+        myChart.showLoading({ text: '', color: '#6366f1', maskColor: 'rgba(0,0,0,0)' });
+
+        fetch(`{% url 'reportes:api_chart_data' %}?metric=${metric}&days=${days}`)
+            .then(response => response.json())
+            .then(data => {
+                myChart.hideLoading();
+                let isEmpty = false;
+                
+                if (type === 'line' && (!data.values || data.values.length === 0)) isEmpty = true;
+                if ((type === 'pie' || type === 'bar' || type === 'bar_horizontal') && (!data.series_data || data.series_data.length === 0)) isEmpty = true;
+
+                if (isEmpty) {
+                    chartDom.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-gray-500 text-xs"><p>Sin datos para este periodo.</p></div>';
+                    myChart.dispose();
+                    return;
                 }
-              },
-              label: {
-                show: false,
-                position: 'center'
-              },
-            }
-          ]
-        };
-        
-        option && myChart.setOption(option);
-        window.addEventListener('resize', myChart.resize);
 
-      } else {
-        document.getElementById('chart_tipo_parto').innerHTML = 
-          '<div class="flex items-center justify-center h-full"><p class="text-gray-400">No hay datos para mostrar en el gráfico (asegúrate de seleccionar un rango de fechas).</p></div>';
-      }
+                // Config Base
+                let option = {
+                    backgroundColor: 'transparent',
+                    tooltip: { trigger: 'item' },
+                    grid: { top: 20, bottom: 20, left: 10, right: 20, containLabel: true },
+                    legend: { bottom: 0, textStyle: { color: '#9ca3af', fontSize: 9 }, type: 'scroll' }
+                };
+
+                // Config específica
+                if (type === 'line' || type === 'bar') {
+                    option.xAxis = { type: 'category', data: data.labels, axisLabel: { color: '#9ca3af', fontSize: 10 } };
+                    option.yAxis = { type: 'value', axisLabel: { color: '#9ca3af', fontSize: 10 }, splitLine: { lineStyle: { color: '#374151' } } };
+                    option.series = [{
+                        data: data.values, type: type, smooth: true,
+                        itemStyle: { color: data.color || '#6366f1' }
+                    }];
+                } 
+                else if (type === 'pie') {
+                    option.series = [{
+                        type: 'pie', radius: ['40%', '70%'], center: ['50%', '50%'],
+                        data: data.series_data,
+                        label: { show: false },
+                        itemStyle: { borderRadius: 4, borderColor: '#111827', borderWidth: 2 }
+                    }];
+                }
+                else if (type === 'bar_horizontal') {
+                     option.xAxis = { type: 'value', show: false };
+                     option.yAxis = { type: 'category', data: data.labels, axisLabel: { color: '#fff', fontSize: 10, interval: 0 }, axisLine: { show: false }, axisTick: { show: false } };
+                     option.series = [{
+                        type: 'bar', data: data.values,
+                        itemStyle: { color: '#818cf8', borderRadius: [0, 4, 4, 0] },
+                        label: { show: true, position: 'right', color: '#fff' }
+                     }];
+                     option.grid.left = 100; // Más espacio para etiquetas largas
+                }
+
+                myChart.setOption(option);
+            })
+            .catch(err => {
+                console.error(err);
+                myChart.hideLoading();
+            });
+    }
+
+    window.addEventListener('resize', () => {
+        for (const key in chartInstances) {
+            if (chartInstances[key]) chartInstances[key].resize();
+        }
     });
   </script>
 {% endblock javascript %}
