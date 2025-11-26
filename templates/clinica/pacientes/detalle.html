@@ -33,6 +33,26 @@
           </span>
         {% endif %}
         <span class="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-gray-300">Creado el {{ paciente.fecha_creacion|date:"d/m/Y H:i" }}</span>
+        {% if paciente.registrado_por %}
+          <span class="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-gray-300">Registró {{ paciente.registrado_por.get_full_name|default:paciente.registrado_por }}</span>
+        {% endif %}
+      </div>
+      <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+        <span class="inline-flex items-center gap-2 rounded-full px-3 py-1
+          {% if paciente.estado_atencion == 'atendido' %}bg-emerald-500/10 text-emerald-200
+          {% elif paciente.estado_atencion == 'en_observacion' %}bg-amber-500/10 text-amber-200
+          {% elif paciente.estado_atencion == 'derivado' %}bg-rose-500/10 text-rose-200
+          {% else %}bg-sky-500/10 text-sky-200{% endif %}">
+          <span class="h-2 w-2 rounded-full bg-current"></span>
+          {{ paciente.get_estado_atencion_display }}
+        </span>
+        <span class="inline-flex items-center gap-2 rounded-full px-3 py-1
+          {% if paciente.riesgo_obstetrico == 'alto' %}bg-rose-500/10 text-rose-200
+          {% elif paciente.riesgo_obstetrico == 'medio' %}bg-amber-500/10 text-amber-200
+          {% else %}bg-emerald-500/10 text-emerald-200{% endif %}">
+          <span class="h-2 w-2 rounded-full bg-current"></span>
+          Riesgo {{ paciente.get_riesgo_obstetrico_display }}
+        </span>
       </div>
       <dl class="mt-6 grid gap-4 text-sm text-gray-300 sm:grid-cols-2">
         <div>
@@ -43,11 +63,28 @@
           <dt class="text-gray-400">Correo</dt>
           <dd class="text-white">{{ paciente.email|default:"Sin correo" }}</dd>
         </div>
+        <div>
+          <dt class="text-gray-400">Consultorio de referencia</dt>
+          <dd class="text-white">{{ paciente.consultorio|default:"Sin asignar" }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-400">Estado civil</dt>
+          <dd class="text-white">{{ paciente.get_estado_civil_display|default:"Sin registro" }}</dd>
+        </div>
         <div class="sm:col-span-2">
           <dt class="text-gray-400">Dirección</dt>
           <dd class="text-white">{{ paciente.direccion|default:"No registrada" }}</dd>
         </div>
       </dl>
+      <div class="mt-6 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+        <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-200">Contacto de emergencia</h3>
+        {% if paciente.contacto_emergencia_nombre or paciente.contacto_emergencia_telefono %}
+          <p class="mt-2 text-sm text-gray-300">{{ paciente.contacto_emergencia_nombre|default:"Sin nombre" }}</p>
+          <p class="text-sm text-gray-400">{{ paciente.contacto_emergencia_telefono|default:"Sin teléfono" }}</p>
+        {% else %}
+          <p class="mt-2 text-sm text-gray-400">No hay contacto de emergencia registrado.</p>
+        {% endif %}
+      </div>
     </article>
 
     <article class="rounded-3xl border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20 space-y-4">
@@ -143,6 +180,24 @@
           {% endfor %}
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <div class="rounded-3xl border border-white/10 bg-slate-900/70 shadow-2xl shadow-black/20">
+    <div class="flex items-center justify-between border-b border-white/5 px-6 py-4">
+      <div>
+        <h2 class="text-lg font-semibold text-white">Historia obstétrica</h2>
+        <p class="text-sm text-gray-400">Madre → parto → RN → alta, todo en una sola vista.</p>
+      </div>
+      <a href="{% url 'clinica:parto_create' %}?paciente={{ paciente.pk }}" class="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500">Registrar nuevo parto</a>
+    </div>
+    <div class="p-6">
+      {% url 'clinica:parto_create' as parto_create_url %}
+      {% with paciente_id=paciente.pk|stringformat:'s' %}
+        {% with nuevo=parto_create_url|add:'?paciente='|add:paciente_id %}
+          {% include 'clinica/pacientes/_partos_cards.html' with partos=partos nuevo_parto_url=nuevo %}
+        {% endwith %}
+      {% endwith %}
     </div>
   </div>
 

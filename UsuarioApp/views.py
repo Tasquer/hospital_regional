@@ -1,4 +1,5 @@
 from .forms import UserCreateForm, ProfileCreateForm, UserUpdateForm, ProfileUpdateForm
+from .models import Profile
 from django.views.generic import ListView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
@@ -76,9 +77,13 @@ class UserCreateView(LoginRequiredMixin, PermitsPositionMixin, View):
 class ProfileUpdateView(LoginRequiredMixin, View):
     template_name = "pages/perfil/perfil.html"
 
+    def get_profile(self, user):
+        profile, _ = Profile.objects.get_or_create(user_FK=user)
+        return profile
+
     def get(self, request, *args, **kwargs):
         user = request.user
-        profile = user.profile
+        profile = self.get_profile(user)
         user_form = UserUpdateForm(instance=user)
         profile_form = ProfileUpdateForm(instance=profile)
 
@@ -88,7 +93,7 @@ class ProfileUpdateView(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         user = request.user
-        profile = user.profile
+        profile = self.get_profile(user)
         user_form = UserUpdateForm(request.POST, instance=user)
         profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
 

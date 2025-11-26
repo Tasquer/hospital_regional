@@ -14,6 +14,46 @@
     </a>
   </div>
 
+  <form method="get" class="rounded-3xl border border-white/10 bg-gray-950/40 p-6 shadow-2xl shadow-black/30">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-wide text-indigo-300">Buscador</p>
+        <p class="text-xs text-gray-400">Filtra por RUT, apellidos, estado de atención o riesgo obstétrico.</p>
+      </div>
+      <div class="flex flex-wrap gap-3 text-sm">
+        <button type="submit" class="rounded-2xl bg-indigo-600 px-4 py-2 font-semibold text-white shadow-indigo-600/30 shadow-lg hover:bg-indigo-500">Aplicar filtros</button>
+        <a href="{% url 'clinica:paciente_list' %}" class="rounded-2xl border border-white/15 px-4 py-2 font-semibold text-gray-200 hover:bg-white/5">Limpiar</a>
+      </div>
+    </div>
+    <div class="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <label class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+        RUT o nombre
+        <input type="search" name="q" value="{{ q }}" placeholder="Ej. 12.345.678 o López" class="mt-1 w-full rounded-2xl border border-white/10 bg-white/90 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400/40" />
+      </label>
+      <label class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+        Estado de atención
+        <select name="estado_atencion" class="mt-1 w-full rounded-2xl border border-white/10 bg-white/90 px-4 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400/40">
+          <option value="">Todos</option>
+          {% for value, label in estado_choices %}
+            <option value="{{ value }}" {% if estado_actual == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="text-xs font-semibold uppercase tracking-wide text-gray-400">
+        Riesgo obstétrico
+        <select name="riesgo_obstetrico" class="mt-1 w-full rounded-2xl border border-white/10 bg-white/90 px-4 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400/40">
+          <option value="">Todos</option>
+          {% for value, label in riesgo_choices %}
+            <option value="{{ value }}" {% if riesgo_actual == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-2 text-xs text-gray-400">
+        Puedes combinar criterios para identificar rápidamente pacientes del mismo turno.
+      </div>
+    </div>
+  </form>
+
   <div class="rounded-[2.5rem] border border-white/10 bg-gray-950/40 p-1 shadow-2xl shadow-black/30">
     <div class="overflow-x-auto rounded-[2rem]">
       <div class="overflow-hidden rounded-[2rem]">
@@ -44,20 +84,42 @@
                   <p class="text-base font-semibold text-white">{{ paciente.nombre_completo }}</p>
                   <p class="text-xs text-gray-400">{{ paciente.get_sexo_display }} · {{ paciente.fecha_nacimiento|date:"d/m/Y" }}</p>
                   <p class="text-xs text-gray-500">{{ paciente.email|default:"Sin correo registrado" }}</p>
+                  <div class="flex flex-wrap gap-2 pt-1 text-[0.65rem] font-semibold">
+                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5
+                      {% if paciente.estado_atencion == 'atendido' %}bg-emerald-500/20 text-emerald-200
+                      {% elif paciente.estado_atencion == 'en_observacion' %}bg-amber-500/20 text-amber-200
+                      {% elif paciente.estado_atencion == 'derivado' %}bg-rose-500/20 text-rose-200
+                      {% else %}bg-sky-500/20 text-sky-200{% endif %}">
+                      <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                      {{ paciente.get_estado_atencion_display }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5
+                      {% if paciente.riesgo_obstetrico == 'alto' %}bg-rose-500/20 text-rose-200
+                      {% elif paciente.riesgo_obstetrico == 'medio' %}bg-amber-500/20 text-amber-200
+                      {% else %}bg-emerald-500/20 text-emerald-200{% endif %}">
+                      <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                      Riesgo {{ paciente.get_riesgo_obstetrico_display }}
+                    </span>
+                  </div>
                 </div>
               </td>
               <td class="px-6 py-4 font-mono text-sm text-gray-200">{{ paciente.rut }}</td>
               <td class="px-6 py-4 text-sm text-gray-200">{{ paciente.telefono|default:"Sin teléfono" }}</td>
               <td class="px-6 py-4">
-                {% if paciente.activo %}
-                  <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
-                    <span class="h-2 w-2 rounded-full bg-emerald-400"></span> Activo
-                  </span>
-                {% else %}
-                  <span class="inline-flex items-center gap-2 rounded-full bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300">
-                    <span class="h-2 w-2 rounded-full bg-rose-400"></span> Inactivo
-                  </span>
-                {% endif %}
+                <div class="space-y-2">
+                  {% if paciente.activo %}
+                    <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                      <span class="h-2 w-2 rounded-full bg-emerald-400"></span> Activo
+                    </span>
+                  {% else %}
+                    <span class="inline-flex items-center gap-2 rounded-full bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300">
+                      <span class="h-2 w-2 rounded-full bg-rose-400"></span> Inactivo
+                    </span>
+                  {% endif %}
+                  {% if paciente.registrado_por %}
+                    <p class="text-[0.65rem] uppercase tracking-wide text-gray-400">Registró: {{ paciente.registrado_por.get_full_name|default:paciente.registrado_por }}</p>
+                  {% endif %}
+                </div>
               </td>
               <td class="px-6 py-4 text-sm">
                 <a href="{% url 'clinica:paciente_trazabilidad' paciente.pk %}" class="text-xs font-medium text-indigo-300 hover:text-indigo-100">
@@ -73,7 +135,7 @@
             </tr>
           {% empty %}
             <tr>
-              <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-400">
+              <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-400">
                 No hay pacientes registrados. <a href="{% url 'clinica:paciente_create' %}" class="text-indigo-300 underline-offset-4 hover:text-indigo-200 hover:underline">Crea el primero</a>.
               </td>
             </tr>

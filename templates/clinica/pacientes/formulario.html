@@ -15,7 +15,7 @@
     </a>
   </div>
 
-  <form method="post" class="mx-auto max-w-5xl rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl shadow-black/25">
+  <form method="post" class="mx-auto max-w-5xl space-y-10 rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl shadow-black/25">
     {% csrf_token %}
     {% if form.non_field_errors %}
       <div class="mb-6 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
@@ -25,39 +25,59 @@
       </div>
     {% endif %}
 
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-      {% for field in form %}
-        {% if field.field.widget.input_type == 'checkbox' %}
-          <div class="md:col-span-2">
-            <label class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-gray-200">
-              {{ field }}
-              {{ field.label }}
-            </label>
-            {% for error in field.errors %}
-              <p class="mt-1 text-xs text-rose-300">{{ error }}</p>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="flex flex-col gap-2">
-            <label for="{{ field.id_for_label }}" class="text-sm font-semibold text-gray-200">
-              {{ field.label }}
-              {% if field.field.required %}<span class="text-rose-400">*</span>{% endif %}
-            </label>
-            <div class="rounded-2xl bg-white px-4 py-3">
-              {{ field }}
-            </div>
-            {% if field.help_text %}
-              <p class="text-xs text-gray-400">{{ field.help_text }}</p>
-            {% endif %}
-            {% for error in field.errors %}
-              <p class="text-xs text-rose-300">{{ error }}</p>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endfor %}
-    </div>
+    {% for hidden in form.hidden_fields %}
+      {{ hidden }}
+    {% endfor %}
 
-    <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
+    <section class="space-y-4">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-300">Datos identificatorios</p>
+        <p class="text-sm text-gray-400">Información básica para la ficha clínica.</p>
+      </div>
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.rut %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.dv %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.fecha_nacimiento %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.nombres %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.apellido_paterno %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.apellido_materno %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.nombre_completo extra_classes='md:col-span-2 lg:col-span-3' %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.sexo %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.estado_civil %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.nivel_educacional %}
+      </div>
+    </section>
+
+    <section class="space-y-4">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-300">Contacto y domicilio</p>
+        <p class="text-sm text-gray-400">Incluye los datos para ubicar a la paciente o su red de apoyo.</p>
+      </div>
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.telefono %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.email %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.direccion extra_classes='md:col-span-2' %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.contacto_emergencia_nombre %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.contacto_emergencia_telefono %}
+      </div>
+    </section>
+
+    <section class="space-y-4">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-300">Clasificación y seguimiento</p>
+        <p class="text-sm text-gray-400">Contextualiza el caso y prioridad en la sala.</p>
+      </div>
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.consultorio %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.nacionalidad_catalogo %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.pueblo_originario_catalogo %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.estado_atencion %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.riesgo_obstetrico %}
+        {% include 'clinica/pacientes/_campo_form.html' with field=form.activo extra_classes='md:col-span-2 lg:col-span-3' %}
+      </div>
+    </section>
+
+    <div class="flex flex-col gap-3 border-t border-white/5 pt-6 sm:flex-row sm:justify-end">
       <a href="{% url 'clinica:paciente_list' %}" class="inline-flex items-center justify-center rounded-2xl border border-white/15 px-6 py-2 text-sm font-semibold text-gray-300 hover:bg-white/5">
         Cancelar
       </a>

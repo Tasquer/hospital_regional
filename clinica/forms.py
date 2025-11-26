@@ -55,16 +55,59 @@ class PacienteForm(BaseClinicaForm):
             "telefono",
             "email",
             "direccion",
+            "contacto_emergencia_nombre",
+            "contacto_emergencia_telefono",
             "estado_civil",
             "nivel_educacional",
             "consultorio",
             "nacionalidad_catalogo",
             "pueblo_originario_catalogo",
+            "estado_atencion",
+            "riesgo_obstetrico",
             "activo",
         ]
         widgets = {
             "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        rut = cleaned_data.get("rut")
+        apellido_paterno = cleaned_data.get("apellido_paterno")
+        apellido_materno = cleaned_data.get("apellido_materno")
+        fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
+
+        if rut:
+            qs = Paciente.objects.filter(rut__iexact=rut)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                self.add_error("rut", "Ya existe un paciente registrado con este RUT.")
+
+        # Advertencias de duplicados por nombre/apellidos + fecha de nacimiento.
+        criterios_suficientes = apellido_paterno and fecha_nacimiento
+        if criterios_suficientes:
+            posibles = Paciente.objects.filter(
+                apellido_paterno__iexact=apellido_paterno,
+                fecha_nacimiento=fecha_nacimiento,
+            )
+            if apellido_materno:
+                posibles = posibles.filter(apellido_materno__iexact=apellido_materno)
+            if self.instance.pk:
+                posibles = posibles.exclude(pk=self.instance.pk)
+            if posibles.exists():
+                similares = ", ".join(
+                    f"{p.nombre_completo or p.full_name} ({p.rut})" for p in posibles[:3]
+                )
+                self.add_error(
+                    None,
+                    (
+                        "Existen pacientes similares registrados: "
+                        f"{similares}. Verifica antes de guardar."
+                    ),
+                )
+
+        return cleaned_data
 
 class PartoForm(BaseClinicaForm):
     def __init__(self, *args, **kwargs):

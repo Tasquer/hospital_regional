@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
@@ -20,12 +20,49 @@ class PacienteListView(LoginRequiredMixin, ListView):
     context_object_name = "pacientes"
     paginate_by = 20
 
+    def get_queryset(self):
+        qs = super().get_queryset().select_related("registrado_por")
+        query = self.request.GET.get("q", "").strip()
+        estado = self.request.GET.get("estado_atencion", "")
+        riesgo = self.request.GET.get("riesgo_obstetrico", "")
+
+        if query:
+            qs = qs.filter(
+                Q(rut__icontains=query)
+                | Q(nombres__icontains=query)
+                | Q(apellido_paterno__icontains=query)
+                | Q(apellido_materno__icontains=query)
+            )
+        if estado:
+            qs = qs.filter(estado_atencion=estado)
+        if riesgo:
+            qs = qs.filter(riesgo_obstetrico=riesgo)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "q": self.request.GET.get("q", ""),
+                "estado_actual": self.request.GET.get("estado_atencion", ""),
+                "riesgo_actual": self.request.GET.get("riesgo_obstetrico", ""),
+                "estado_choices": Paciente.EstadoAtencionChoices.choices,
+                "riesgo_choices": Paciente.RiesgoObstetricoChoices.choices,
+            }
+        )
+        return context
+
 
 class PacienteCreateView(LoginRequiredMixin, CreateView):
     model = Paciente
     template_name = "clinica/pacientes/formulario.html"
     form_class = PacienteForm
     success_url = reverse_lazy("clinica:paciente_list")
+
+    def form_valid(self, form):
+        if not form.instance.pk:
+            form.instance.registrado_por = self.request.user
+        return super().form_valid(form)
 
 
 class PacienteUpdateView(PacienteCreateView, UpdateView):
@@ -37,12 +74,27 @@ class PacienteDetailView(LoginRequiredMixin, DetailView):
     template_name = "clinica/pacientes/detalle.html"
     context_object_name = "paciente"
 
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                Prefetch(
+                    "partos",
+                    queryset=
+                    Parto.objects.select_related("personal_responsable", "alta")
+                    .prefetch_related("recien_nacidos"),
+                )
+            )
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["casos_clinicos"] = (
             self.object.casos_clinicos.select_related("medico_responsable")
             .order_by("-fecha_creacion")
         )
+        context["partos"] = self.object.partos.all()
         return context
 
 

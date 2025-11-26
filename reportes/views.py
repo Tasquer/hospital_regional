@@ -5,7 +5,8 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
 from datetime import datetime, timedelta
 from django.views.generic import TemplateView, View
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.db.models import Count, Avg, StdDev, Q
@@ -44,8 +45,18 @@ class ReporteFilterMixin:
 
 
 # --- VISTA DASHBOARD ---
-class ReportesObstetriciaView(LoginRequiredMixin, ReporteFilterMixin, TemplateView):
+class ReportesObstetriciaView(LoginRequiredMixin, UserPassesTestMixin, ReporteFilterMixin, TemplateView):
     template_name = "reportes/dashboard_obstetricia.html"
+    raise_exception = False
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_staff or user.is_superuser
+
+    def handle_no_permission(self):
+        if self.request.user.is_authenticated:
+            raise PermissionDenied
+        return super().handle_no_permission()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

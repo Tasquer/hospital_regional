@@ -105,6 +105,17 @@ class Paciente(models.Model):
         CHILENA = "chilena", _("Chilena")
         EXTRANJERA = "extranjera", _("Extranjera")
 
+    class EstadoAtencionChoices(models.TextChoices):
+        EN_ESPERA = "en_espera", _("En espera")
+        EN_OBSERVACION = "en_observacion", _("En observación")
+        ATENDIDO = "atendido", _("Atendido")
+        DERIVADO = "derivado", _("Derivado")
+
+    class RiesgoObstetricoChoices(models.TextChoices):
+        BAJO = "bajo", _("Bajo")
+        MEDIO = "medio", _("Medio")
+        ALTO = "alto", _("Alto")
+
     rut = models.CharField(_("RUT"), max_length=12, unique=True)
     dv = models.CharField(_("Dígito verificador"), max_length=1, blank=True)
     nombres = models.CharField(_("Nombres"), max_length=100, blank=True)
@@ -155,6 +166,14 @@ class Paciente(models.Model):
         blank=True,
         db_column="consultorio_id",
     )
+    registrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("Registrado por"),
+        related_name="pacientes_registrados",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
     nacionalidad_catalogo = models.ForeignKey(
         Nacionalidad,
         verbose_name=_("Nacionalidad (catálogo)"),
@@ -174,6 +193,28 @@ class Paciente(models.Model):
         db_column="pueblo_originario_id",
     )
     activo = models.BooleanField(_("Activo"), default=True)
+    estado_atencion = models.CharField(
+        _("Estado de atención"),
+        max_length=20,
+        choices=EstadoAtencionChoices.choices,
+        default=EstadoAtencionChoices.EN_ESPERA,
+    )
+    riesgo_obstetrico = models.CharField(
+        _("Riesgo obstétrico"),
+        max_length=10,
+        choices=RiesgoObstetricoChoices.choices,
+        default=RiesgoObstetricoChoices.BAJO,
+    )
+    contacto_emergencia_nombre = models.CharField(
+        _("Nombre contacto de emergencia"),
+        max_length=120,
+        blank=True,
+    )
+    contacto_emergencia_telefono = models.CharField(
+        _("Teléfono contacto de emergencia"),
+        max_length=20,
+        blank=True,
+    )
     fecha_creacion = models.DateTimeField(_("Fecha de creación"), auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(_("Fecha de actualización"), auto_now=True)
 

@@ -1,0 +1,23 @@
+{% load i18n %}
+<div class="flex flex-col gap-2 {{ extra_classes|default:'' }}">
+  {% if field.field.widget.input_type == 'checkbox' %}
+    <label class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-gray-200">
+      {{ field }}
+      <span>{{ field.label }}</span>
+    </label>
+  {% else %}
+    <label for="{{ field.id_for_label }}" class="text-sm font-semibold text-gray-200">
+      {{ field.label }}
+      {% if field.field.required %}<span class="text-rose-400">*</span>{% endif %}
+    </label>
+    <div class="rounded-2xl bg-white px-4 py-3">
+      {{ field }}
+    </div>
+  {% endif %}
+  {% if field.help_text %}
+    <p class="text-xs text-gray-400">{{ field.help_text }}</p>
+  {% endif %}
+  {% for error in field.errors %}
+    <p class="text-xs text-rose-300">{{ error }}</p>
+  {% endfor %}
+</div>
