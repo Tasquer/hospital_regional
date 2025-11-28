@@ -215,8 +215,13 @@ class RecienNacidoForm(BaseClinicaForm):
 class AltaForm(BaseClinicaForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance.pk:
+        # MODIFICADO: Bloquear el campo 'parto' si ya viene pre-seleccionado o si es edición
+        if self.instance.pk or 'parto' in self.initial:
             self.fields["parto"].disabled = True
+            # Agregamos clases para indicar visualmente que está bloqueado (bg-gray-100, cursor-not-allowed)
+            widget = self.fields["parto"].widget
+            current_classes = widget.attrs.get("class", "")
+            widget.attrs["class"] = f"{current_classes} bg-gray-100 cursor-not-allowed opacity-75".strip()
 
     class Meta:
         model = Alta

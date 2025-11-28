@@ -220,7 +220,6 @@ class PartoDetailView(LoginRequiredMixin, DetailView):
             .prefetch_related("recien_nacidos")
         )
 
-    
 
 class RecienNacidoListView(LoginRequiredMixin, ListView):
     model = RecienNacido
@@ -281,16 +280,31 @@ class AltaCreateView(LoginRequiredMixin, CreateView):
 
     def get_initial(self):
         initial = super().get_initial()
-        parto_id = self.request.GET.get("parto")
+        # Modificado: Se soporta 'parto_id' (enviado por dashboard) o 'parto'
+        parto_id = self.request.GET.get("parto_id") or self.request.GET.get("parto")
         if parto_id:
             try:
+                # Se asigna el ID directamente
                 initial["parto"] = Parto.objects.get(pk=parto_id)
             except Parto.DoesNotExist:
                 pass
         return initial
 
     def form_valid(self, form):
+        # NOTA: Al estar el campo disabled, Django usa el valor inicial (get_initial)
+        # o el valor de la instancia automáticamente.
         parto = form.cleaned_data.get("parto")
+        
+        # Si por alguna razón parto es None (edge case), intentamos recuperarlo del initial
+        if not parto:
+             try:
+                 parto_id = self.get_initial().get('parto')
+                 if parto_id:
+                     parto = parto_id # Puede ser objeto o ID
+                     form.instance.parto = parto
+             except:
+                 pass
+
         if not parto:
             form.add_error("parto", "Debes seleccionar un parto válido.")
             return self.form_invalid(form)
@@ -332,6 +346,3 @@ class AltaUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return reverse("clinica:paciente_trazabilidad", args=[self.object.parto.paciente_id])
-
-
-# Create your views here.

@@ -4,6 +4,10 @@ from . import views
 app_name = "clinica"
 
 urlpatterns = [
+    # Ruta principal - Tablero
+    
+    
+    # Pacientes
     path("pacientes/", views.PacienteListView.as_view(), name="paciente_list"),
     path("pacientes/nuevo/", views.PacienteCreateView.as_view(), name="paciente_create"),
     path("pacientes/<int:pk>/editar/", views.PacienteUpdateView.as_view(), name="paciente_update"),
@@ -13,16 +17,20 @@ urlpatterns = [
         views.PacienteTrazabilidadDetailView.as_view(),
         name="paciente_trazabilidad",
     ),
+    
+    # Casos clínicos
     path("casos/", views.CasoClinicoListView.as_view(), name="caso_list"),
     path("casos/nuevo/", views.CasoClinicoCreateView.as_view(), name="caso_create"),
     path("casos/<int:pk>/editar/", views.CasoClinicoUpdateView.as_view(), name="caso_update"),
     path("casos/<int:pk>/", views.CasoClinicoDetailView.as_view(), name="caso_detail"),
     
+    # Partos
     path("partos/", views.PartoListView.as_view(), name="parto_list"),
     path("partos/nuevo/", views.PartoCreateView.as_view(), name="parto_create"),
     path("partos/<int:pk>/", views.PartoDetailView.as_view(), name="parto_detail"),
     path("partos/<int:pk>/editar/", views.PartoUpdateView.as_view(), name="parto_update"),
 
+    # Recién nacidos
     path(
         "recien-nacidos/",
         views.RecienNacidoListView.as_view(),
@@ -44,6 +52,7 @@ urlpatterns = [
         name="recien_nacido_detail",
     ),
 
+    # Altas
     path("altas/nuevo/", views.AltaCreateView.as_view(), name="alta_create"),
     path("altas/<int:pk>/editar/", views.AltaUpdateView.as_view(), name="alta_update"),
 ]

@@ -4,12 +4,13 @@ import json
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
 from datetime import datetime, timedelta
+from math import sqrt  # <-- NUEVO: Agregar esta importación
 from django.views.generic import TemplateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
-from django.db.models import Count, Avg, StdDev, Q
+from django.db.models import Count, Avg, Q  # <-- MODIFICADO: Solo necesitamos Count, Avg y Q
 from django.db.models.functions import TruncDate
 from django.template.loader import get_template
 from xhtml2pdf import pisa
@@ -82,17 +83,49 @@ class ReportesObstetriciaView(LoginRequiredMixin, UserPassesTestMixin, ReporteFi
         sex_raw = rn_qs.values('sexo').annotate(total=Count('id')).order_by('sexo')
         context["distribucion_sexo_rn"] = [{'sexo_display': str(sex_map.get(i['sexo'], i['sexo'])), 'total': i['total']} for i in sex_raw]
 
-        # Stats Vitales
-        stats = rn_qs.aggregate(
-            Avg('peso_gramos'), StdDev('peso_gramos'),
-            Avg('talla_cm'), StdDev('talla_cm'),
-            Avg('apgar5'), StdDev('apgar5')
-        )
+        # ============================================================
+        # Stats Vitales - SOLUCIÓN MANUAL (Compatible con SQLite)
+        # ============================================================
+        def calcular_estadisticas(queryset, campo):
+            """
+            Calcula promedio y desviación estándar manualmente.
+            Compatible con SQLite que tiene problemas con StdDev y Variance.
+            """
+            # Obtener todos los valores no nulos
+            valores = list(queryset.values_list(campo, flat=True).exclude(**{f'{campo}__isnull': True}))
+            
+            if not valores:
+                return None, None
+            
+            # Calcular promedio
+            promedio = sum(valores) / len(valores)
+            
+            # Calcular desviación estándar
+            if len(valores) > 1:
+                varianza = sum((x - promedio) ** 2 for x in valores) / len(valores)
+                desviacion = sqrt(varianza)
+            else:
+                desviacion = None
+            
+            return promedio, desviacion
+        
+        # Calcular estadísticas para cada campo
+        promedio_peso, stddev_peso = calcular_estadisticas(rn_qs, 'peso_gramos')
+        promedio_talla, stddev_talla = calcular_estadisticas(rn_qs, 'talla_cm')
+        promedio_apgar, stddev_apgar = calcular_estadisticas(rn_qs, 'apgar5')
+        
+        # Actualizar el contexto con las estadísticas
         context.update({
-            "promedio_peso_rn": stats.get('peso_gramos__avg'), "stddev_peso_rn": stats.get('peso_gramos__stddev'),
-            "promedio_talla_rn": stats.get('talla_cm__avg'), "stddev_talla_rn": stats.get('talla_cm__stddev'),
-            "promedio_apgar_rn": stats.get('apgar5__avg'), "stddev_apgar_rn": stats.get('apgar5__stddev'),
+            "promedio_peso_rn": promedio_peso, 
+            "stddev_peso_rn": stddev_peso,
+            "promedio_talla_rn": promedio_talla, 
+            "stddev_talla_rn": stddev_talla,
+            "promedio_apgar_rn": promedio_apgar, 
+            "stddev_apgar_rn": stddev_apgar,
         })
+        # ============================================================
+        # FIN DE LA CORRECCIÓN
+        # ============================================================
 
         # Demografía
         def get_dist(qs, field, choices):
@@ -150,14 +183,11 @@ class ChartDataView(LoginRequiredMixin, View):
             data = {'title': f'Peso Promedio {title_suffix}', 'type': 'line', 'color': '#34d399', 'series_data': chart, 'labels': [x[0] for x in chart], 'values': [x[1] for x in chart]}
 
         # --- 2. DISTRIBUCIONES (PIE/BARRA) ---
-        # NUEVO: Complicaciones ahora es distribución (Torta) en vez de evolución (Línea)
         elif metric == 'complicaciones_distribucion':
              qs = Parto.objects.exclude(Q(complicaciones__isnull=True)|Q(complicaciones__exact=''))
              if start_date: qs = qs.filter(fecha_hora__date__gte=start_date)
 
-             # Agrupamos por el texto de la complicación
              raw = qs.values('complicaciones').annotate(t=Count('id')).order_by('-t')
-             # Tomamos las top 6 para que la torta no sea ilegible si hay muchas distintas
              top_raw = raw[:6]
              chart = [{'name': i['complicaciones'], 'value': i['t']} for i in top_raw]
              data = {'title': f'Tipos de Complicaciones {title_suffix}', 'type': 'pie', 'series_data': chart}
