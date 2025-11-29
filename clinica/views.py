@@ -41,6 +41,9 @@ class PacienteListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Exponer la página completa para que los tests y templates puedan acceder al paginador.
+        if context.get("page_obj"):
+            context["pacientes"] = context["page_obj"]
         context.update(
             {
                 "q": self.request.GET.get("q", ""),

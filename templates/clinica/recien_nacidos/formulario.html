@@ -41,24 +41,23 @@
       </div>
 
       {% for field in form %}
-        {% if field.name == 'parto' %}
-          {% continue %}
-        {% endif %}
-        <div class="space-y-1">
-          <label class="block text-sm font-semibold text-slate-100">
-            {{ field.label }}
-            {% if field.field.required %}
-              <span class="text-rose-400">*</span>
+        {% if field.name != 'parto' %}
+          <div class="space-y-1">
+            <label class="block text-sm font-semibold text-slate-800">
+              {{ field.label }}
+              {% if field.field.required %}
+                <span class="text-rose-400">*</span>
+              {% endif %}
+            </label>
+            {{ field }}
+            {% if field.help_text %}
+              <p class="text-xs text-slate-600">{{ field.help_text }}</p>
             {% endif %}
-          </label>
-          {{ field }}
-          {% if field.help_text %}
-            <p class="text-xs text-slate-300">{{ field.help_text }}</p>
-          {% endif %}
-          {% for error in field.errors %}
-            <p class="text-xs text-rose-400">{{ error }}</p>
-          {% endfor %}
-        </div>
+            {% for error in field.errors %}
+              <p class="text-xs text-rose-500">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
       {% endfor %}
     </div>
 
