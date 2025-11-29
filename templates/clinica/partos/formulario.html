@@ -26,15 +26,38 @@
     {% endif %}
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div class="md:col-span-2 flex flex-col gap-2">
+        <label for="paciente_lookup" class="text-sm font-semibold text-slate-100">
+          Madre
+          <span class="text-rose-400">*</span>
+        </label>
+        <input id="paciente_lookup" type="search" list="paciente_datalist" placeholder="Escribe RUT o nombre de la madre" class="w-full rounded-2xl border border-white/15 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400/40">
+        <datalist id="paciente_datalist">
+          {% for paciente in form.fields.paciente.queryset %}
+            <option value="{{ paciente.rut }} - {{ paciente.nombre_completo|default:paciente.full_name }}" data-pk="{{ paciente.pk }}"></option>
+          {% endfor %}
+        </datalist>
+        <div class="hidden">
+          {{ form.paciente }}
+        </div>
+        <p class="text-xs text-slate-300">Busca por RUT o apellidos y selecciona la madre antes de guardar.</p>
+        {% for error in form.paciente.errors %}
+          <p class="text-xs text-rose-300">{{ error }}</p>
+        {% endfor %}
+      </div>
+
       {% for field in form %}
+        {% if field.name == 'paciente' %}
+          {% continue %}
+        {% endif %}
         <div class="flex flex-col gap-2">
-          <label for="{{ field.id_for_label }}" class="text-sm font-semibold text-gray-200">
+          <label for="{{ field.id_for_label }}" class="text-sm font-semibold text-slate-100">
             {{ field.label }}
             {% if field.field.required %}<span class="text-rose-400">*</span>{% endif %}
           </label>
           {{ field }}
           {% if field.help_text %}
-            <p class="text-xs text-gray-400">{{ field.help_text }}</p>
+            <p class="text-xs text-slate-300">{{ field.help_text }}</p>
           {% endif %}
           {% for error in field.errors %}
             <p class="text-xs text-rose-300">{{ error }}</p>
@@ -52,6 +75,34 @@
       </button>
     </div>
   </form>
+
+  <script>
+    (() => {
+      const select = document.getElementById("id_paciente");
+      const input = document.getElementById("paciente_lookup");
+      const datalist = document.getElementById("paciente_datalist");
+      if (!select || !input || !datalist) return;
+
+      const setInputFromSelect = () => {
+        const opt = select.options[select.selectedIndex];
+        if (opt && opt.value) {
+          const match = Array.from(datalist.options).find((o) => o.dataset.pk === opt.value);
+          input.value = match ? match.value : (opt.text || input.value);
+        }
+      };
+
+      setInputFromSelect();
+
+      input.addEventListener("change", () => {
+        const match = Array.from(datalist.options).find((opt) => opt.value === input.value);
+        if (match) {
+          select.value = match.dataset.pk;
+        } else {
+          select.value = "";
+        }
+      });
+    })();
+  </script>
 
   {% include 'components/mensajes.html' %}
 </section>

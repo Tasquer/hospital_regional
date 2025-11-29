@@ -1,6 +1,15 @@
 from django import forms
 
-from .models import CasoClinico, Paciente, RecienNacido, Parto, Alta
+from .models import (
+    Alta,
+    CasoClinico,
+    Consultorio,
+    Nacionalidad,
+    Paciente,
+    Parto,
+    PuebloOriginario,
+    RecienNacido,
+)
 
 
 INPUT_CLASS = "w-full rounded-2xl border border-gray-200/70 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400/40"
@@ -41,6 +50,33 @@ class BaseClinicaForm(forms.ModelForm):
 
 
 class PacienteForm(BaseClinicaForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Catálogos activos y opción nula explícita para derivaciones.
+        self.fields["consultorio"].queryset = Consultorio.objects.filter(activo=True)
+        self.fields["consultorio"].empty_label = "Sin derivación / No aplica"
+        self.fields["nacionalidad_catalogo"].queryset = Nacionalidad.objects.filter(activo=True)
+        self.fields["nacionalidad_catalogo"].empty_label = "Selecciona nacionalidad"
+        self.fields["pueblo_originario_catalogo"].queryset = PuebloOriginario.objects.filter(
+            activo=True
+        )
+        self.fields["pueblo_originario_catalogo"].empty_label = "Sin adscripción"
+
+        # Ayudas rápidas de formato para los campos de texto.
+        ayuda = {
+            "rut": "Ej: 12.345.678-9",
+            "dv": "Dígito verificador (0-9 o K)",
+            "telefono": "Ej: +56 9 1234 5678",
+            "contacto_emergencia_telefono": "Ej: +56 9 8765 4321",
+            "direccion": "Ej: Calle 123, Comuna",
+            "email": "Ej: paciente@mail.com",
+            "contacto_emergencia_nombre": "Nombre y parentesco del contacto",
+        }
+        for name, texto in ayuda.items():
+            if name in self.fields:
+                self.fields[name].help_text = texto
+
     class Meta:
         model = Paciente
         fields = [
@@ -114,6 +150,10 @@ class PartoForm(BaseClinicaForm):
         super().__init__(*args, **kwargs)
         # El flujo obstétrico requiere registrar siempre el profesional responsable.
         self.fields["personal_responsable"].required = True
+        self.fields["paciente"].queryset = (
+            Paciente.objects.filter(activo=True)
+            .order_by("apellido_paterno", "apellido_materno", "nombres")
+        )
 
     class Meta:
         model = Parto
@@ -169,6 +209,13 @@ class PartoForm(BaseClinicaForm):
 
 
 class RecienNacidoForm(BaseClinicaForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["parto"].queryset = (
+            Parto.objects.select_related("paciente")
+            .order_by("-fecha_hora")
+        )
+
     class Meta:
         model = RecienNacido
         fields = [

@@ -20,23 +20,47 @@
     {% csrf_token %}
     {{ form.non_field_errors }}
 
-    {% for field in form %}
-      <div class="space-y-1">
-        <label class="block text-sm font-medium text-gray-200">
-          {{ field.label }}
-          {% if field.field.required %}
-            <span class="text-rose-400">*</span>
-          {% endif %}
+    <div class="space-y-4">
+      <div class="space-y-2">
+        <label for="parto_lookup" class="block text-sm font-semibold text-slate-100">
+          Episodio de parto <span class="text-rose-400">*</span>
         </label>
-        {{ field }}
-        {% if field.help_text %}
-          <p class="text-xs text-gray-400">{{ field.help_text }}</p>
-        {% endif %}
-        {% for error in field.errors %}
-          <p class="text-xs text-rose-400">{{ error }}</p>
+        <input id="parto_lookup" type="search" list="parto_datalist" placeholder="Busca por ID de parto, RUT o nombre de la madre" class="w-full rounded-2xl border border-white/15 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400/40">
+        <datalist id="parto_datalist">
+          {% for parto in form.fields.parto.queryset %}
+            <option value="Parto {{ parto.id }} · {{ parto.paciente.rut }} - {{ parto.paciente.nombre_completo|default:parto.paciente.full_name }} ({{ parto.fecha_hora|date:'d/m/Y' }})" data-pk="{{ parto.pk }}"></option>
+          {% endfor %}
+        </datalist>
+        <div class="hidden">
+          {{ form.parto }}
+        </div>
+        <p class="text-xs text-slate-300">Escribe para filtrar rápidamente el episodio correcto.</p>
+        {% for error in form.parto.errors %}
+          <p class="text-xs text-rose-300">{{ error }}</p>
         {% endfor %}
       </div>
-    {% endfor %}
+
+      {% for field in form %}
+        {% if field.name == 'parto' %}
+          {% continue %}
+        {% endif %}
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-100">
+            {{ field.label }}
+            {% if field.field.required %}
+              <span class="text-rose-400">*</span>
+            {% endif %}
+          </label>
+          {{ field }}
+          {% if field.help_text %}
+            <p class="text-xs text-slate-300">{{ field.help_text }}</p>
+          {% endif %}
+          {% for error in field.errors %}
+            <p class="text-xs text-rose-400">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
 
     <div class="flex justify-end gap-3">
       <a href="{% url 'clinica:recien_nacido_list' %}"
@@ -49,5 +73,33 @@
       </button>
     </div>
   </form>
+
+  <script>
+    (() => {
+      const select = document.getElementById("id_parto");
+      const input = document.getElementById("parto_lookup");
+      const datalist = document.getElementById("parto_datalist");
+      if (!select || !input || !datalist) return;
+
+      const setInputFromSelect = () => {
+        const opt = select.options[select.selectedIndex];
+        if (opt && opt.value) {
+          const match = Array.from(datalist.options).find((o) => o.dataset.pk === opt.value);
+          input.value = match ? match.value : (opt.text || input.value);
+        }
+      };
+
+      setInputFromSelect();
+
+      input.addEventListener("change", () => {
+        const match = Array.from(datalist.options).find((opt) => opt.value === input.value);
+        if (match) {
+          select.value = match.dataset.pk;
+        } else {
+          select.value = "";
+        }
+      });
+    })();
+  </script>
 </section>
 {% endblock content_main %}
