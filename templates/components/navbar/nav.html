@@ -69,7 +69,6 @@
                     {% endif %}">
             <svg class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24"
                 stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-              <!-- icono simple tipo "bebé" -->
               <path stroke-linecap="round" stroke-linejoin="round"
                     d="M12 21c3.314 0 6-2.239 6-5V9a6 6 0 10-12 0v7c0 2.761 2.686 5 6 5z" />
               <path stroke-linecap="round" stroke-linejoin="round"
@@ -79,7 +78,9 @@
           </a>
         </li>
 
-        {% if user.is_staff or user.is_superuser %}
+        {# --- CAMBIO IMPORTANTE: Lógica de visibilidad para Reportes --- #}
+        {% with code=user.profile.position_FK.permission_code %}
+        {% if user.is_superuser or code == 'TOTAL_ACCESS' or code == 'CLINICAL_FULL' or code == 'ADMINISTRATIVE' or code == 'READ_ONLY' %}
           <li>
             <a href="{% url 'reportes:dashboard_obstetricia' %}" class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 {% if '/reportes' in request.path %}text-white bg-gray-800{% else %}text-gray-400 hover:text-white hover:bg-gray-800{% endif %}">
               <svg class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
@@ -89,6 +90,9 @@
             </a>
           </li>
         {% endif %}
+        {% endwith %}
+        {# --- FIN CAMBIO --- #}
+
       </ul>
     </li>
     <li>

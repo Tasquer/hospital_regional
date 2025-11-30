@@ -1,8 +1,11 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+# Eliminamos LoginRequiredMixin porque PermitsPositionMixin ya maneja la autenticación
 from django.db.models import Prefetch, Q
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
+
+# Importamos nuestro mixin personalizado
+from core.mixins import PermitsPositionMixin
 
 from .forms import (
     AltaForm,
@@ -14,7 +17,14 @@ from .forms import (
 from .models import Alta, CasoClinico, Paciente, Parto, RecienNacido
 
 
-class PacienteListView(LoginRequiredMixin, ListView):
+# -----------------------------------------------------------------------------
+# VISTAS DE PACIENTE
+# -----------------------------------------------------------------------------
+
+class PacienteListView(PermitsPositionMixin, ListView):
+    # Todos pueden ver la lista (Clínicos y Administrativos)
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT', 'ADMINISTRATIVE']
+    
     model = Paciente
     template_name = "clinica/pacientes/lista.html"
     context_object_name = "pacientes"
@@ -41,9 +51,6 @@ class PacienteListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Exponer la página completa para que los tests y templates puedan acceder al paginador.
-        if context.get("page_obj"):
-            context["pacientes"] = context["page_obj"]
         context.update(
             {
                 "q": self.request.GET.get("q", ""),
@@ -56,7 +63,10 @@ class PacienteListView(LoginRequiredMixin, ListView):
         return context
 
 
-class PacienteCreateView(LoginRequiredMixin, CreateView):
+class PacienteCreateView(PermitsPositionMixin, CreateView):
+    # Crear pacientes: Administrativos (Admisión) y Clínicos Full (Médicos/Matronas)
+    permission_required = ['CLINICAL_FULL', 'ADMINISTRATIVE']
+    
     model = Paciente
     template_name = "clinica/pacientes/formulario.html"
     form_class = PacienteForm
@@ -69,10 +79,15 @@ class PacienteCreateView(LoginRequiredMixin, CreateView):
 
 
 class PacienteUpdateView(PacienteCreateView, UpdateView):
+    # Hereda permisos de PacienteCreateView
     pass
 
 
-class PacienteDetailView(LoginRequiredMixin, DetailView):
+class PacienteDetailView(PermitsPositionMixin, DetailView):
+    # Ver ficha completa: Solo personal clínico (TENS, Enfermeras, Médicos, Matronas)
+    # Administrativos NO deberían ver detalles clínicos sensibles aquí
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
+
     model = Paciente
     template_name = "clinica/pacientes/detalle.html"
     context_object_name = "paciente"
@@ -101,44 +116,10 @@ class PacienteDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class CasoClinicoListView(LoginRequiredMixin, ListView):
-    model = CasoClinico
-    template_name = "clinica/casos/lista.html"
-    context_object_name = "casos"
-    paginate_by = 20
-
-    def get_queryset(self):
-        return super().get_queryset().select_related("paciente", "medico_responsable")
-
-
-class CasoClinicoCreateView(LoginRequiredMixin, CreateView):
-    model = CasoClinico
-    template_name = "clinica/casos/formulario.html"
-    form_class = CasoClinicoForm
-    success_url = reverse_lazy("clinica:caso_list")
-
-    def get_initial(self):
-        initial = super().get_initial()
-        paciente_id = self.request.GET.get("paciente")
-        if paciente_id:
-            initial["paciente"] = paciente_id
-        return initial
-
-
-class CasoClinicoUpdateView(CasoClinicoCreateView, UpdateView):
-    pass
-
-
-class CasoClinicoDetailView(LoginRequiredMixin, DetailView):
-    model = CasoClinico
-    template_name = "clinica/casos/detalle.html"
-    context_object_name = "caso"
-
-    def get_queryset(self):
-        return super().get_queryset().select_related("paciente", "medico_responsable")
-
-
-class PacienteTrazabilidadDetailView(LoginRequiredMixin, DetailView):
+class PacienteTrazabilidadDetailView(PermitsPositionMixin, DetailView):
+    # Trazabilidad: Solo clínicos
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
+    
     model = Paciente
     template_name = "clinica/paciente_trazabilidad_detail.html"
     context_object_name = "paciente"
@@ -165,7 +146,64 @@ class PacienteTrazabilidadDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class PartoListView(LoginRequiredMixin, ListView):
+# -----------------------------------------------------------------------------
+# VISTAS DE CASOS CLÍNICOS
+# -----------------------------------------------------------------------------
+
+class CasoClinicoListView(PermitsPositionMixin, ListView):
+    # Ver lista casos: Todo el personal clínico
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
+    
+    model = CasoClinico
+    template_name = "clinica/casos/lista.html"
+    context_object_name = "casos"
+    paginate_by = 20
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("paciente", "medico_responsable")
+
+
+class CasoClinicoCreateView(PermitsPositionMixin, CreateView):
+    # Crear caso: Solo Médicos/Matronas (CLINICAL_FULL)
+    permission_required = ['CLINICAL_FULL']
+    
+    model = CasoClinico
+    template_name = "clinica/casos/formulario.html"
+    form_class = CasoClinicoForm
+    success_url = reverse_lazy("clinica:caso_list")
+
+    def get_initial(self):
+        initial = super().get_initial()
+        paciente_id = self.request.GET.get("paciente")
+        if paciente_id:
+            initial["paciente"] = paciente_id
+        return initial
+
+
+class CasoClinicoUpdateView(CasoClinicoCreateView, UpdateView):
+    pass
+
+
+class CasoClinicoDetailView(PermitsPositionMixin, DetailView):
+    # Ver detalle caso: Todo el personal clínico
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
+    
+    model = CasoClinico
+    template_name = "clinica/casos/detalle.html"
+    context_object_name = "caso"
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("paciente", "medico_responsable")
+
+
+# -----------------------------------------------------------------------------
+# VISTAS DE PARTOS
+# -----------------------------------------------------------------------------
+
+class PartoListView(PermitsPositionMixin, ListView):
+    # Ver lista partos: Todo el personal clínico
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
+    
     model = Parto
     template_name = "clinica/partos/lista.html"
     context_object_name = "partos"
@@ -180,7 +218,10 @@ class PartoListView(LoginRequiredMixin, ListView):
         return qs
 
 
-class PartoCreateView(LoginRequiredMixin, CreateView):
+class PartoCreateView(PermitsPositionMixin, CreateView):
+    # REGISTRAR PARTO: Acción crítica. Solo Médicos/Matronas.
+    permission_required = ['CLINICAL_FULL']
+    
     model = Parto
     template_name = "clinica/partos/formulario.html"
     form_class = PartoForm
@@ -200,7 +241,10 @@ class PartoCreateView(LoginRequiredMixin, CreateView):
         return reverse("clinica:parto_detail", args=[self.object.pk])
 
 
-class PartoUpdateView(LoginRequiredMixin, UpdateView):
+class PartoUpdateView(PermitsPositionMixin, UpdateView):
+    # Editar parto: Solo Médicos/Matronas.
+    permission_required = ['CLINICAL_FULL']
+    
     model = Parto
     template_name = "clinica/partos/formulario.html"
     form_class = PartoForm
@@ -210,7 +254,10 @@ class PartoUpdateView(LoginRequiredMixin, UpdateView):
         return reverse("clinica:parto_detail", args=[self.object.pk])
 
 
-class PartoDetailView(LoginRequiredMixin, DetailView):
+class PartoDetailView(PermitsPositionMixin, DetailView):
+    # Ver detalle parto: Todo el personal clínico
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
+    
     model = Parto
     template_name = "clinica/partos/detalle.html"
     context_object_name = "parto"
@@ -224,7 +271,14 @@ class PartoDetailView(LoginRequiredMixin, DetailView):
         )
 
 
-class RecienNacidoListView(LoginRequiredMixin, ListView):
+# -----------------------------------------------------------------------------
+# VISTAS DE RECIÉN NACIDOS
+# -----------------------------------------------------------------------------
+
+class RecienNacidoListView(PermitsPositionMixin, ListView):
+    # Ver lista RN: Todo el personal clínico
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
+    
     model = RecienNacido
     template_name = "clinica/recien_nacidos/lista.html"
     context_object_name = "recien_nacidos"
@@ -239,7 +293,10 @@ class RecienNacidoListView(LoginRequiredMixin, ListView):
         )
 
 
-class RecienNacidoCreateView(LoginRequiredMixin, CreateView):
+class RecienNacidoCreateView(PermitsPositionMixin, CreateView):
+    # Registrar RN: Solo Médicos/Matronas/Neonatólogos
+    permission_required = ['CLINICAL_FULL']
+    
     model = RecienNacido
     template_name = "clinica/recien_nacidos/formulario.html"
     form_class = RecienNacidoForm
@@ -263,7 +320,10 @@ class RecienNacidoUpdateView(RecienNacidoCreateView, UpdateView):
     pass
 
 
-class RecienNacidoDetailView(LoginRequiredMixin, DetailView):
+class RecienNacidoDetailView(PermitsPositionMixin, DetailView):
+    # Ver detalle RN: Todo el personal clínico
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
+    
     model = RecienNacido
     template_name = "clinica/recien_nacidos/detalle.html"
     context_object_name = "rn"
@@ -276,34 +336,36 @@ class RecienNacidoDetailView(LoginRequiredMixin, DetailView):
         )
 
 
-class AltaCreateView(LoginRequiredMixin, CreateView):
+# -----------------------------------------------------------------------------
+# VISTAS DE ALTA
+# -----------------------------------------------------------------------------
+
+class AltaCreateView(PermitsPositionMixin, CreateView):
+    # Dar de alta: Responsabilidad Médico-Legal exclusiva (CLINICAL_FULL)
+    permission_required = ['CLINICAL_FULL']
+    
     model = Alta
     template_name = "clinica/altas/formulario.html"
     form_class = AltaForm
 
     def get_initial(self):
         initial = super().get_initial()
-        # Modificado: Se soporta 'parto_id' (enviado por dashboard) o 'parto'
         parto_id = self.request.GET.get("parto_id") or self.request.GET.get("parto")
         if parto_id:
             try:
-                # Se asigna el ID directamente
                 initial["parto"] = Parto.objects.get(pk=parto_id)
             except Parto.DoesNotExist:
                 pass
         return initial
 
     def form_valid(self, form):
-        # NOTA: Al estar el campo disabled, Django usa el valor inicial (get_initial)
-        # o el valor de la instancia automáticamente.
         parto = form.cleaned_data.get("parto")
         
-        # Si por alguna razón parto es None (edge case), intentamos recuperarlo del initial
         if not parto:
              try:
                  parto_id = self.get_initial().get('parto')
                  if parto_id:
-                     parto = parto_id # Puede ser objeto o ID
+                     parto = parto_id 
                      form.instance.parto = parto
              except:
                  pass
@@ -330,7 +392,10 @@ class AltaCreateView(LoginRequiredMixin, CreateView):
         return reverse("clinica:paciente_trazabilidad", args=[self.object.parto.paciente_id])
 
 
-class AltaUpdateView(LoginRequiredMixin, UpdateView):
+class AltaUpdateView(PermitsPositionMixin, UpdateView):
+    # Editar alta: Responsabilidad Médico-Legal exclusiva (CLINICAL_FULL)
+    permission_required = ['CLINICAL_FULL']
+    
     model = Alta
     template_name = "clinica/altas/formulario.html"
     form_class = AltaForm
