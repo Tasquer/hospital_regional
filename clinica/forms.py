@@ -1,27 +1,14 @@
 from django import forms
-
-from .models import (
-    Alta,
-    CasoClinico,
-    Consultorio,
-    Nacionalidad,
-    Paciente,
-    Parto,
-    PuebloOriginario,
-    RecienNacido,
-)
-
+from .models import CasoClinico, Paciente, RecienNacido, Parto, Alta, Consultorio, Nacionalidad, PuebloOriginario
 
 INPUT_CLASS = "w-full rounded-2xl border border-gray-200/70 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400/40"
 CHECKBOX_CLASS = "h-4 w-4 rounded border-white/30 bg-transparent text-indigo-500 focus:ring-indigo-500"
-
 
 class BaseClinicaForm(forms.ModelForm):
     """
     Asigna de forma consistente las clases Tailwind a los widgets
     para mantener la coherencia visual del dashboard.
     """
-
     textarea_extra = " min-h-[10rem]"
 
     def __init__(self, *args, **kwargs):
@@ -52,18 +39,16 @@ class BaseClinicaForm(forms.ModelForm):
 class PacienteForm(BaseClinicaForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # Catálogos activos y opción nula explícita para derivaciones.
+        # Configuración de campos FK para que se vean bonitos
         self.fields["consultorio"].queryset = Consultorio.objects.filter(activo=True)
         self.fields["consultorio"].empty_label = "Sin derivación / No aplica"
-        self.fields["nacionalidad_catalogo"].queryset = Nacionalidad.objects.filter(activo=True)
-        self.fields["nacionalidad_catalogo"].empty_label = "Selecciona nacionalidad"
-        self.fields["pueblo_originario_catalogo"].queryset = PuebloOriginario.objects.filter(
-            activo=True
-        )
-        self.fields["pueblo_originario_catalogo"].empty_label = "Sin adscripción"
+        
+        self.fields["nacionalidad"].queryset = Nacionalidad.objects.filter(activo=True)
+        self.fields["nacionalidad"].empty_label = "Selecciona nacionalidad"
+        
+        self.fields["pueblo_originario"].queryset = PuebloOriginario.objects.filter(activo=True)
+        self.fields["pueblo_originario"].empty_label = "Sin adscripción"
 
-        # Ayudas rápidas de formato para los campos de texto.
         ayuda = {
             "rut": "Ej: 12.345.678-9",
             "dv": "Dígito verificador (0-9 o K)",
@@ -80,27 +65,14 @@ class PacienteForm(BaseClinicaForm):
     class Meta:
         model = Paciente
         fields = [
-            "rut",
-            "dv",
-            "nombres",
-            "apellido_paterno",
-            "apellido_materno",
-            "nombre_completo",
-            "fecha_nacimiento",
-            "sexo",
-            "telefono",
-            "email",
-            "direccion",
-            "contacto_emergencia_nombre",
-            "contacto_emergencia_telefono",
-            "estado_civil",
-            "nivel_educacional",
-            "consultorio",
-            "nacionalidad_catalogo",
-            "pueblo_originario_catalogo",
-            "estado_atencion",
-            "riesgo_obstetrico",
-            "activo",
+            "rut", "dv", "nombres", "apellido_paterno", "apellido_materno",
+            "nombre_completo", "fecha_nacimiento", "sexo", "telefono",
+            "email", "direccion", "contacto_emergencia_nombre",
+            "contacto_emergencia_telefono", "estado_civil",
+            "nivel_educacional", 
+            # Campos corregidos (FK directas)
+            "consultorio", "nacionalidad", "pueblo_originario",
+            "estado_atencion", "riesgo_obstetrico", "activo",
         ]
         widgets = {
             "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
@@ -120,7 +92,6 @@ class PacienteForm(BaseClinicaForm):
             if qs.exists():
                 self.add_error("rut", "Ya existe un paciente registrado con este RUT.")
 
-        # Advertencias de duplicados por nombre/apellidos + fecha de nacimiento.
         criterios_suficientes = apellido_paterno and fecha_nacimiento
         if criterios_suficientes:
             posibles = Paciente.objects.filter(
@@ -132,59 +103,32 @@ class PacienteForm(BaseClinicaForm):
             if self.instance.pk:
                 posibles = posibles.exclude(pk=self.instance.pk)
             if posibles.exists():
-                similares = ", ".join(
-                    f"{p.nombre_completo or p.full_name} ({p.rut})" for p in posibles[:3]
-                )
-                self.add_error(
-                    None,
-                    (
-                        "Existen pacientes similares registrados: "
-                        f"{similares}. Verifica antes de guardar."
-                    ),
-                )
+                similares = ", ".join(f"{p.nombre_completo or p.full_name} ({p.rut})" for p in posibles[:3])
+                self.add_error(None, f"Existen pacientes similares registrados: {similares}. Verifica antes de guardar.")
 
         return cleaned_data
+
 
 class PartoForm(BaseClinicaForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # El flujo obstétrico requiere registrar siempre el profesional responsable.
         self.fields["personal_responsable"].required = True
-        self.fields["paciente"].queryset = (
-            Paciente.objects.filter(activo=True)
-            .order_by("apellido_paterno", "apellido_materno", "nombres")
-        )
+        self.fields["paciente"].queryset = Paciente.objects.filter(activo=True).order_by("apellido_paterno", "apellido_materno", "nombres")
 
     class Meta:
         model = Parto
         fields = [
-            "paciente",
-            "fecha_hora",
-            "fecha_ingreso",
-            "tipo_parto",
-            "tipo_parto_catalogo",
-            "posicion_parto",
-            "posicion_parto_otro",
-            "sala",
-            "edad_materna_parto",
-            "paridad",
-            "control_prenatal",
-            "preeclampsia_severa",
-            "eclampsia",
-            "sepsis",
-            "infeccion_ovular",
-            "detalle_otra_patologia",
-            "ligadura_tardia_cordon",
-            "contacto_piel_piel",
-            "duracion_contacto_min",
-            "lactancia_primera_hora",
-            "alojamiento_conjunto",
-            "vdrl_positivo",
-            "hepatitis_b_positivo",
-            "vih_positivo",
-            "complicaciones",
-            "observaciones",
-            "duracion_trabajo_parto_min",
+            "paciente", "fecha_hora", "fecha_ingreso", 
+            "tipo_parto", # FK directa
+            "posicion_parto", "posicion_parto_otro", "sala",
+            "edad_materna_parto", "paridad", "control_prenatal",
+            "preeclampsia_severa", "eclampsia", "sepsis",
+            "infeccion_ovular", "detalle_otra_patologia",
+            "ligadura_tardia_cordon", "contacto_piel_piel",
+            "duracion_contacto_min", "lactancia_primera_hora",
+            "alojamiento_conjunto", "vdrl_positivo",
+            "hepatitis_b_positivo", "vih_positivo", "complicaciones",
+            "observaciones", "duracion_trabajo_parto_min",
             "personal_responsable",
         ]
         widgets = {
@@ -194,51 +138,30 @@ class PartoForm(BaseClinicaForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        required_fields = [
-            "paciente",
-            "fecha_hora",
-            "tipo_parto",
-            "personal_responsable",
-        ]
-
+        required_fields = ["paciente", "fecha_hora", "tipo_parto", "personal_responsable"]
         for field_name in required_fields:
             if not cleaned_data.get(field_name):
                 self.add_error(field_name, "Este campo es obligatorio.")
-
         return cleaned_data
 
 
 class RecienNacidoForm(BaseClinicaForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["parto"].queryset = (
-            Parto.objects.select_related("paciente")
-            .order_by("-fecha_hora")
-        )
+        self.fields["parto"].queryset = Parto.objects.select_related("paciente").order_by("-fecha_hora")
 
     class Meta:
         model = RecienNacido
         fields = [
-            "parto",
-            "identificador",
-            "sexo",
-            "peso_gramos",
-            "talla_cm",
-            "perimetro_cefalico_cm",
-            "apgar1",
-            "apgar5",
-            "edad_gestacional_semanas",
-            "reanimacion",
-            "tiene_malformacion",
-            "malformacion_detalle",
-            "condicion_inicial",
-            "derivacion",
-            "diagnostico_alta",
+            "parto", "identificador", "sexo", "peso_gramos",
+            "talla_cm", "perimetro_cefalico_cm", "apgar1", "apgar5",
+            "edad_gestacional_semanas", "reanimacion",
+            "tiene_malformacion", "malformacion_detalle",
+            "condicion_inicial", "derivacion", "diagnostico_alta",
         ]
 
     def clean(self):
         cleaned_data = super().clean()
-
         for field in ("apgar1", "apgar5"):
             value = cleaned_data.get(field)
             if value is not None and not 0 <= value <= 10:
@@ -251,21 +174,15 @@ class RecienNacidoForm(BaseClinicaForm):
 
         edad_gestacional = cleaned_data.get("edad_gestacional_semanas")
         if edad_gestacional is not None and not 20 <= edad_gestacional <= 45:
-            self.add_error(
-                "edad_gestacional_semanas",
-                "La edad gestacional debe estar entre 20 y 45 semanas.",
-            )
-
+            self.add_error("edad_gestacional_semanas", "La edad gestacional debe estar entre 20 y 45 semanas.")
         return cleaned_data
 
 
 class AltaForm(BaseClinicaForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # MODIFICADO: Bloquear el campo 'parto' si ya viene pre-seleccionado o si es edición
         if self.instance.pk or 'parto' in self.initial:
             self.fields["parto"].disabled = True
-            # Agregamos clases para indicar visualmente que está bloqueado (bg-gray-100, cursor-not-allowed)
             widget = self.fields["parto"].widget
             current_classes = widget.attrs.get("class", "")
             widget.attrs["class"] = f"{current_classes} bg-gray-100 cursor-not-allowed opacity-75".strip()
@@ -273,13 +190,8 @@ class AltaForm(BaseClinicaForm):
     class Meta:
         model = Alta
         fields = [
-            "parto",
-            "fecha_alta",
-            "tipo_alta",
-            "condicion_egreso",
-            "requiere_seguimiento",
-            "proxima_cita",
-            "observaciones",
+            "parto", "fecha_alta", "tipo_alta", "condicion_egreso",
+            "requiere_seguimiento", "proxima_cita", "observaciones",
         ]
         widgets = {
             "fecha_alta": forms.DateTimeInput(attrs={"type": "datetime-local"}),
@@ -293,11 +205,6 @@ class CasoClinicoForm(BaseClinicaForm):
     class Meta:
         model = CasoClinico
         fields = [
-            "paciente",
-            "titulo",
-            "resumen",
-            "especialidad",
-            "prioridad",
-            "estado",
-            "medico_responsable",
+            "paciente", "titulo", "resumen", "especialidad",
+            "prioridad", "estado", "medico_responsable",
         ]

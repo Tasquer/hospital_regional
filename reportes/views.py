@@ -6,19 +6,19 @@ from openpyxl.styles import Font, Alignment, PatternFill
 from datetime import datetime, timedelta
 from math import sqrt
 from django.views.generic import TemplateView, View
-from django.core.exceptions import PermissionDenied
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
-from django.db.models import Count, Avg, Q
+from django.db.models import Count, Avg, StdDev, Q
 from django.db.models.functions import TruncDate
 from django.template.loader import get_template
 from xhtml2pdf import pisa
-from clinica.models import Paciente, Parto, RecienNacido
+from clinica.models import Paciente, Parto, RecienNacido, TipoParto
 
-# --- IMPORTACIÓN NUEVA PARA SEGURIDAD ---
+# --- IMPORTACIÓN SEGURIDAD ---
 from core.mixins import PermitsPositionMixin
 
-# --- MIXIN DE FILTRADO (Se mantiene igual) ---
+# --- MIXIN DE FILTRADO ---
 class ReporteFilterMixin:
     def get_filtered_querysets(self, request):
         fecha_inicio_str = request.GET.get('fecha_inicio')
@@ -33,6 +33,7 @@ class ReporteFilterMixin:
                 fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
                 fecha_final = datetime.strptime(fecha_final_str, '%Y-%m-%d').date()
                 
+                # CORRECCIÓN: Filtramos por la fecha CLÍNICA (fecha_hora), no la de sistema
                 partos_qs = partos_qs.filter(fecha_hora__date__range=[fecha_inicio, fecha_final])
                 rn_qs = rn_qs.filter(parto__fecha_hora__date__range=[fecha_inicio, fecha_final])
                 
@@ -47,16 +48,10 @@ class ReporteFilterMixin:
         return partos_qs, rn_qs, pacientes_qs, fecha_inicio_str, fecha_final_str
 
 
-# --- VISTA DASHBOARD (ACTUALIZADA CON NUEVOS PERMISOS) ---
+# --- VISTA DASHBOARD (PROTEGIDA) ---
 class ReportesObstetriciaView(PermitsPositionMixin, ReporteFilterMixin, TemplateView):
     template_name = "reportes/dashboard_obstetricia.html"
     
-    # AQUÍ ESTÁ EL CAMBIO CLAVE:
-    # Permitimos entrada a: 
-    # - READ_ONLY (Auditores)
-    # - ADMINISTRATIVE (Administrativos)
-    # - CLINICAL_FULL (Médicos/Matronas)
-    # - TOTAL_ACCESS (Admin/Jefes)
     permission_required = ['READ_ONLY', 'ADMINISTRATIVE', 'CLINICAL_FULL', 'TOTAL_ACCESS']
 
     def get_context_data(self, **kwargs):
@@ -71,10 +66,14 @@ class ReportesObstetriciaView(PermitsPositionMixin, ReporteFilterMixin, Template
         context["total_complicaciones"] = partos_qs.exclude(Q(complicaciones__isnull=True) | Q(complicaciones__exact='')).count()
 
         # Listas Resumen
-        tipo_map = dict(Parto.TipoPartoChoices.choices)
-        tipo_raw = partos_qs.values('tipo_parto').annotate(total=Count('id')).order_by('tipo_parto')
-        context["distribucion_tipo_parto"] = [{'tipo_display': str(tipo_map.get(i['tipo_parto'], i['tipo_parto'])), 'total': i['total']} for i in tipo_raw]
+        # Agrupamos por el nombre del tipo de parto relacionado
+        tipo_raw = partos_qs.values('tipo_parto__nombre').annotate(total=Count('id')).order_by('-total')
+        context["distribucion_tipo_parto"] = [
+            {'tipo_display': item['tipo_parto__nombre'], 'total': item['total']} 
+            for item in tipo_raw if item['tipo_parto__nombre']
+        ]
 
+        # Posición
         pos_map = dict(Parto.PosicionPartoChoices.choices)
         pos_raw = partos_qs.values('posicion_parto').annotate(total=Count('id')).order_by('-total')
         context["distribucion_posicion_parto"] = [{'posicion_display': str(pos_map.get(i['posicion_parto'], i['posicion_parto'])), 'total': i['total']} for i in pos_raw if i['posicion_parto']]
@@ -84,149 +83,157 @@ class ReportesObstetriciaView(PermitsPositionMixin, ReporteFilterMixin, Template
         context["distribucion_sexo_rn"] = [{'sexo_display': str(sex_map.get(i['sexo'], i['sexo'])), 'total': i['total']} for i in sex_raw]
 
         # Stats Vitales
-        def calcular_estadisticas(queryset, campo):
-            valores = list(queryset.values_list(campo, flat=True).exclude(**{f'{campo}__isnull': True}))
-            if not valores: return None, None
-            promedio = sum(valores) / len(valores)
-            if len(valores) > 1:
-                varianza = sum((x - promedio) ** 2 for x in valores) / len(valores)
-                desviacion = sqrt(varianza)
-            else:
-                desviacion = None
-            return promedio, desviacion
-        
-        promedio_peso, stddev_peso = calcular_estadisticas(rn_qs, 'peso_gramos')
-        promedio_talla, stddev_talla = calcular_estadisticas(rn_qs, 'talla_cm')
-        promedio_apgar, stddev_apgar = calcular_estadisticas(rn_qs, 'apgar5')
-        
+        def calcular_stats(queryset, campo):
+            vals = list(queryset.values_list(campo, flat=True).exclude(**{f'{campo}__isnull': True}))
+            if not vals: return None, None
+            prom = sum(vals) / len(vals)
+            desv = sqrt(sum((x - prom) ** 2 for x in vals) / len(vals)) if len(vals) > 1 else 0
+            return prom, desv
+
+        p_peso, d_peso = calcular_stats(rn_qs, 'peso_gramos')
+        p_talla, d_talla = calcular_stats(rn_qs, 'talla_cm')
+        p_apgar, d_apgar = calcular_stats(rn_qs, 'apgar5')
+
         context.update({
-            "promedio_peso_rn": promedio_peso, "stddev_peso_rn": stddev_peso,
-            "promedio_talla_rn": promedio_talla, "stddev_talla_rn": stddev_talla,
-            "promedio_apgar_rn": promedio_apgar, "stddev_apgar_rn": stddev_apgar,
+            "promedio_peso_rn": p_peso, "stddev_peso_rn": d_peso,
+            "promedio_talla_rn": p_talla, "stddev_talla_rn": d_talla,
+            "promedio_apgar_rn": p_apgar, "stddev_apgar_rn": d_apgar,
         })
 
         # Demografía
-        def get_dist(qs, field, choices):
+        def get_dist_fk(qs, field):
+            data = qs.values(f'{field}__nombre').annotate(total=Count('id')).order_by('-total')
+            return [{'display': str(i[f'{field}__nombre']), 'total': i['total']} for i in data if i[f'{field}__nombre']]
+
+        def get_dist_choice(qs, field, choices):
             mapping = dict(choices.choices)
             data = qs.values(field).annotate(total=Count('id')).order_by('-total')
             return [{'display': str(mapping.get(i[field], i[field])), 'total': i['total']} for i in data if i[field]]
 
-        context["distribucion_pueblos"] = get_dist(pacientes_qs, 'pueblo_originario', Paciente.PuebloOriginarioChoices)
-        context["distribucion_educacion"] = get_dist(pacientes_qs, 'nivel_educacional', Paciente.NivelEducacionalChoices)
-        context["distribucion_estado_civil"] = get_dist(pacientes_qs, 'estado_civil', Paciente.EstadoCivilChoices)
-        context["distribucion_nacionalidad"] = get_dist(pacientes_qs, 'nacionalidad', Paciente.NacionalidadChoices)
+        context["distribucion_pueblos"] = get_dist_fk(pacientes_qs, 'pueblo_originario')
+        context["distribucion_nacionalidad"] = get_dist_fk(pacientes_qs, 'nacionalidad')
+        context["distribucion_educacion"] = get_dist_choice(pacientes_qs, 'nivel_educacional', Paciente.NivelEducacionalChoices)
+        context["distribucion_estado_civil"] = get_dist_choice(pacientes_qs, 'estado_civil', Paciente.EstadoCivilChoices)
 
         return context
 
 
 # --- VISTA API (JSON) - PROTEGIDA ---
 class ChartDataView(PermitsPositionMixin, View):
-    # Protegemos la API también para que nadie saque datos sin permiso
     permission_required = ['READ_ONLY', 'ADMINISTRATIVE', 'CLINICAL_FULL', 'TOTAL_ACCESS']
 
     def get(self, request):
         metric = request.GET.get('metric')
         days_param = request.GET.get('days', '7')
-
         start_date = None
-        title_suffix = ""
+        title_suffix = "(Histórico)"
 
-        if days_param == 'historic':
-            start_date = None
-            title_suffix = "(Histórico)"
-        else:
+        if days_param != 'historic':
             try:
                 days = int(days_param)
                 start_date = timezone.now().date() - timedelta(days=days)
                 title_suffix = f"(Últimos {days} días)"
             except ValueError:
-                days = 7
-                start_date = timezone.now().date() - timedelta(days=7)
-                title_suffix = "(Últimos 7 días)"
+                pass
 
         data = {}
 
+        # 1. EVOLUCIÓN (LÍNEA)
         if metric == 'partos_evolucion':
             qs = Parto.objects.all()
+            # CORRECCIÓN: Usamos 'fecha_hora' (la real del parto)
             if start_date: qs = qs.filter(fecha_hora__date__gte=start_date)
             
+            # CORRECCIÓN: Agrupamos por 'fecha_hora'
             evo = qs.annotate(date=TruncDate('fecha_hora')).values('date').annotate(c=Count('id')).order_by('date')
             chart = [[i['date'].strftime('%Y-%m-%d'), i['c']] for i in evo]
             data = {'title': f'Partos {title_suffix}', 'type': 'line', 'series_data': chart, 'labels': [x[0] for x in chart], 'values': [x[1] for x in chart]}
 
         elif metric == 'vitales_peso_evolucion':
             qs = RecienNacido.objects.all()
+            # CORRECCIÓN: Usamos 'parto__fecha_hora' (la fecha del parto asociado)
             if start_date: qs = qs.filter(parto__fecha_hora__date__gte=start_date)
-
+            
+            # CORRECCIÓN: Agrupamos por 'parto__fecha_hora'
             evo = qs.annotate(date=TruncDate('parto__fecha_hora')).values('date').annotate(avg=Avg('peso_gramos')).order_by('date')
             chart = [[i['date'].strftime('%Y-%m-%d'), round(i['avg'], 1)] for i in evo]
             data = {'title': f'Peso Promedio {title_suffix}', 'type': 'line', 'color': '#34d399', 'series_data': chart, 'labels': [x[0] for x in chart], 'values': [x[1] for x in chart]}
 
-        elif metric == 'complicaciones_distribucion':
-             qs = Parto.objects.exclude(Q(complicaciones__isnull=True)|Q(complicaciones__exact=''))
-             if start_date: qs = qs.filter(fecha_hora__date__gte=start_date)
-
-             raw = qs.values('complicaciones').annotate(t=Count('id')).order_by('-t')
-             top_raw = raw[:6]
-             chart = [{'name': i['complicaciones'], 'value': i['t']} for i in top_raw]
-             data = {'title': f'Tipos de Complicaciones {title_suffix}', 'type': 'pie', 'series_data': chart}
-
-        elif metric == 'sexo_distribucion':
-            qs = RecienNacido.objects.all()
-            if start_date: qs = qs.filter(parto__fecha_hora__date__gte=start_date)
-
-            mapping = dict(RecienNacido.SexoChoices.choices)
-            raw = qs.values('sexo').annotate(t=Count('id'))
-            chart = [{'name': str(mapping.get(i['sexo'], i['sexo'])), 'value': i['t']} for i in raw]
-            data = {'title': f'Sexo RN {title_suffix}', 'type': 'pie', 'series_data': chart}
-
-        elif metric == 'tipo_parto_distribucion':
-            qs = Parto.objects.all()
-            if start_date: qs = qs.filter(fecha_hora__date__gte=start_date)
-
-            mapping = dict(Parto.TipoPartoChoices.choices)
-            raw = qs.values('tipo_parto').annotate(t=Count('id'))
-            chart = [{'name': str(mapping.get(i['tipo_parto'], i['tipo_parto'])), 'value': i['t']} for i in raw]
-            data = {'title': f'Tipo Parto {title_suffix}', 'type': 'pie', 'series_data': chart}
-
-        elif metric == 'posicion_distribucion':
-            qs = Parto.objects.exclude(posicion_parto__exact='')
-            if start_date: qs = qs.filter(fecha_hora__date__gte=start_date)
-
-            mapping = dict(Parto.PosicionPartoChoices.choices)
-            raw = qs.values('posicion_parto').annotate(t=Count('id')).order_by('-t')
-            chart = [{'name': str(mapping.get(i['posicion_parto'], i['posicion_parto'])), 'value': i['t']} for i in raw]
-            data = {'title': f'Posición {title_suffix}', 'type': 'bar_horizontal', 'series_data': chart, 'labels': [x['name'] for x in chart], 'values': [x['value'] for x in chart]}
-
-        elif metric in ['pueblo_distribucion', 'educacion_distribucion', 'estado_civil_distribucion', 'nacionalidad_distribucion']:
-            qs_partos = Parto.objects.all()
-            if start_date: qs_partos = qs_partos.filter(fecha_hora__date__gte=start_date)
-            
-            pacientes_qs = Paciente.objects.filter(partos__in=qs_partos).distinct()
-            
-            config = {
-                'pueblo_distribucion': ('pueblo_originario', Paciente.PuebloOriginarioChoices, 'pie'),
-                'educacion_distribucion': ('nivel_educacional', Paciente.NivelEducacionalChoices, 'bar'),
-                'estado_civil_distribucion': ('estado_civil', Paciente.EstadoCivilChoices, 'pie'),
-                'nacionalidad_distribucion': ('nacionalidad', Paciente.NacionalidadChoices, 'pie'),
+        # 2. DISTRIBUCIONES (VARIEDAD)
+        else:
+            config_choice = {
+                'complicaciones_distribucion': (Parto, 'complicaciones', None, 'doughnut'),
+                'sexo_distribucion': (RecienNacido, 'sexo', RecienNacido.SexoChoices, 'pie'),
+                'posicion_distribucion': (Parto, 'posicion_parto', Parto.PosicionPartoChoices, 'bar_horizontal'),
+                'educacion_distribucion': (Paciente, 'nivel_educacional', Paciente.NivelEducacionalChoices, 'bar'),
+                'estado_civil_distribucion': (Paciente, 'estado_civil', Paciente.EstadoCivilChoices, 'doughnut'),
             }
-            fname, fchoices, ftype = config[metric]
-            mapping = dict(fchoices.choices)
-            raw = pacientes_qs.values(fname).annotate(t=Count('id')).order_by('-t')
-            chart = [{'name': str(mapping.get(i[fname], i[fname])), 'value': i['t']} for i in raw if i[fname]]
             
-            data = {'title': f'Distribución {title_suffix}', 'series_data': chart}
-            if ftype == 'bar':
-                data['type'] = 'bar'; data['labels'] = [x['name'] for x in chart]; data['values'] = [x['value'] for x in chart]
-            else:
-                data['type'] = 'pie'
+            config_fk = {
+                'tipo_parto_distribucion': (Parto, 'tipo_parto', 'doughnut'),
+                'pueblo_distribucion': (Paciente, 'pueblo_originario', 'pie'),
+                'nacionalidad_distribucion': (Paciente, 'nacionalidad', 'bar_horizontal'),
+            }
+
+            if metric in config_fk:
+                Model, field, chart_type = config_fk[metric]
+                qs = Model.objects.all()
+                
+                # Filtro de fecha usando la fecha clínica correcta
+                date_field = 'fecha_hora' if Model == Parto else ('parto__fecha_hora' if Model == RecienNacido else 'fecha_creacion')
+                if Model == Paciente and start_date:
+                    # Pacientes se filtran por sus partos en la fecha
+                    partos_in = Parto.objects.filter(fecha_hora__date__gte=start_date)
+                    qs = qs.filter(partos__in=partos_in).distinct()
+                elif start_date:
+                    # Nota: Si el modelo no tiene fecha_hora (como Paciente directo), usamos fecha_creacion por defecto,
+                    # pero la lógica de arriba ya maneja Paciente via Parto.
+                    qs = qs.filter(**{f'{date_field}__date__gte': start_date})
+
+                # Agrupamos por nombre de la relación FK
+                raw = qs.values(f'{field}__nombre').annotate(t=Count('id')).order_by('-t')
+                chart_data = [{'name': i[f'{field}__nombre'], 'value': i['t']} for i in raw if i[f'{field}__nombre']]
+                
+                data = {'title': f'Distribución {title_suffix}', 'series_data': chart_data, 'type': chart_type}
+                if 'bar' in chart_type:
+                    data['labels'] = [x['name'] for x in chart_data]; data['values'] = [x['value'] for x in chart_data]
+
+            elif metric in config_choice:
+                Model, field, Choices, chart_type = config_choice[metric]
+                qs = Model.objects.all()
+                
+                date_field = 'fecha_hora' if Model == Parto else ('parto__fecha_hora' if Model == RecienNacido else 'fecha_creacion')
+
+                if Model == Paciente and start_date:
+                    partos_in = Parto.objects.filter(fecha_hora__date__gte=start_date)
+                    qs = qs.filter(partos__in=partos_in).distinct()
+                elif start_date:
+                    qs = qs.filter(**{f'{date_field}__date__gte': start_date})
+
+                if field == 'complicaciones':
+                     qs = qs.exclude(Q(complicaciones__isnull=True)|Q(complicaciones__exact=''))
+                else:
+                     qs = qs.exclude(**{f'{field}__exact': ''})
+
+                raw = qs.values(field).annotate(t=Count('id')).order_by('-t')
+                if field == 'complicaciones': raw = raw[:6]
+
+                mapping = dict(Choices.choices) if Choices else {}
+                chart_data = []
+                for item in raw:
+                    val = item[field]
+                    name = str(mapping.get(val, val))
+                    chart_data.append({'name': name, 'value': item['t']})
+                
+                data = {'title': f'Distribución {title_suffix}', 'series_data': chart_data, 'type': chart_type}
+                if 'bar' in chart_type:
+                    data['labels'] = [x['name'] for x in chart_data]; data['values'] = [x['value'] for x in chart_data]
 
         return JsonResponse(data)
 
 
-# --- VISTA EXPORTAR EXCEL (PROTEGIDA) ---
+# --- VISTA EXPORTAR EXCEL ---
 class ExportarReporteExcelView(PermitsPositionMixin, ReporteFilterMixin, View):
-    # También la protegemos para descargas
     permission_required = ['READ_ONLY', 'ADMINISTRATIVE', 'CLINICAL_FULL', 'TOTAL_ACCESS']
 
     def get(self, request):
@@ -247,7 +254,7 @@ class ExportarReporteExcelView(PermitsPositionMixin, ReporteFilterMixin, View):
             c.font = header_font; c.fill = header_fill
 
         row = 7
-        for p in partos_qs.select_related('paciente').prefetch_related('recien_nacidos'):
+        for p in partos_qs.select_related('paciente', 'tipo_parto', 'paciente__pueblo_originario', 'paciente__nacionalidad').prefetch_related('recien_nacidos'):
             rn = p.recien_nacidos.first()
             edad = "N/A"
             if p.paciente.fecha_nacimiento:
@@ -255,10 +262,15 @@ class ExportarReporteExcelView(PermitsPositionMixin, ReporteFilterMixin, View):
                 fn = p.paciente.fecha_nacimiento
                 edad = hoy.year - fn.year - ((hoy.month, hoy.day) < (fn.month, fn.day))
 
+            # Nombres seguros de FKs
+            pueblo = p.paciente.pueblo_originario.nombre if p.paciente.pueblo_originario else "-"
+            tipo_p = p.tipo_parto.nombre if p.tipo_parto else "-"
+
             ws.append([
-                p.fecha_hora.strftime('%d/%m/%Y'), str(p.paciente), edad,
-                p.paciente.get_pueblo_originario_display(), p.paciente.get_nivel_educacional_display(),
-                p.get_tipo_parto_display(), p.get_posicion_parto_display(),
+                p.fecha_hora.strftime('%d/%m/%Y %H:%M'), # CORRECCIÓN: Usar fecha_hora
+                str(p.paciente), edad,
+                pueblo, p.paciente.get_nivel_educacional_display(),
+                tipo_p, p.get_posicion_parto_display(),
                 rn.get_sexo_display() if rn else "-", rn.peso_gramos if rn else "-", rn.talla_cm if rn else "-"
             ])
 
@@ -267,12 +279,10 @@ class ExportarReporteExcelView(PermitsPositionMixin, ReporteFilterMixin, View):
         wb.save(response)
         return response
 
-
-# --- VISTA EXPORTAR PDF (PROTEGIDA) ---
+# --- VISTA EXPORTAR PDF ---
 class ExportarReportePDFView(PermitsPositionMixin, ReporteFilterMixin, View):
-    # Protegemos la descarga de PDF
     permission_required = ['READ_ONLY', 'ADMINISTRATIVE', 'CLINICAL_FULL', 'TOTAL_ACCESS']
-
+    
     def get(self, request):
         view = ReportesObstetriciaView()
         view.request = request

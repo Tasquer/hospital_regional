@@ -94,17 +94,6 @@ class Paciente(models.Model):
         UNIVERSITARIA = "universitaria", _("Universitaria")
         OTRO = "otro", _("Otro")
 
-    class PuebloOriginarioChoices(models.TextChoices):
-        NINGUNO = "ninguno", _("Ninguno")
-        MAPUCHE = "mapuche", _("Mapuche")
-        AYMARA = "aymara", _("Aymara")
-        RAPANUI = "rapanui", _("Rapa Nui")
-        OTRO = "otro", _("Otro")
-
-    class NacionalidadChoices(models.TextChoices):
-        CHILENA = "chilena", _("Chilena")
-        EXTRANJERA = "extranjera", _("Extranjera")
-
     class EstadoAtencionChoices(models.TextChoices):
         EN_ESPERA = "en_espera", _("En espera")
         EN_OBSERVACION = "en_observacion", _("En observación")
@@ -127,6 +116,7 @@ class Paciente(models.Model):
     telefono = models.CharField(_("Teléfono"), max_length=20, blank=True)
     email = models.EmailField(_("Correo electrónico"), blank=True)
     direccion = models.CharField(_("Dirección"), max_length=255, blank=True)
+    
     estado_civil = models.CharField(
         _("Estado civil"),
         max_length=20,
@@ -141,22 +131,8 @@ class Paciente(models.Model):
         default=NivelEducacionalChoices.OTRO,
         blank=True,
     )
-    pueblo_originario = models.CharField(
-        _("Pueblo originario (histórico)"),
-        max_length=20,
-        choices=PuebloOriginarioChoices.choices,
-        default=PuebloOriginarioChoices.NINGUNO,
-        blank=True,
-        help_text=_("Campo legado. Se mantendrá hasta migrar completamente al catálogo REM."),
-    )
-    nacionalidad = models.CharField(
-        _("Nacionalidad (histórica)"),
-        max_length=20,
-        choices=NacionalidadChoices.choices,
-        default=NacionalidadChoices.CHILENA,
-        blank=True,
-        help_text=_("Campo legado. Se recomienda usar el catálogo de nacionalidades."),
-    )
+
+    # --- CAMPOS CORREGIDOS (FK son las oficiales ahora) ---
     consultorio = models.ForeignKey(
         Consultorio,
         verbose_name=_("Consultorio de referencia"),
@@ -174,24 +150,26 @@ class Paciente(models.Model):
         null=True,
         blank=True,
     )
-    nacionalidad_catalogo = models.ForeignKey(
+    nacionalidad = models.ForeignKey(
         Nacionalidad,
-        verbose_name=_("Nacionalidad (catálogo)"),
+        verbose_name=_("Nacionalidad"),
         related_name="pacientes",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         db_column="nacionalidad_codigo",
     )
-    pueblo_originario_catalogo = models.ForeignKey(
+    pueblo_originario = models.ForeignKey(
         PuebloOriginario,
-        verbose_name=_("Pueblo originario (catálogo)"),
+        verbose_name=_("Pueblo originario"),
         related_name="pacientes",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         db_column="pueblo_originario_id",
     )
+    # ------------------------------------------------------
+
     activo = models.BooleanField(_("Activo"), default=True)
     estado_atencion = models.CharField(
         _("Estado de atención"),
@@ -293,12 +271,6 @@ class CasoClinico(models.Model):
 
 
 class Parto(models.Model):
-    class TipoPartoChoices(models.TextChoices):
-        VAGINAL = "vaginal", _("Vaginal")
-        CESAREA = "cesarea", _("Cesárea")
-        INSTRUMENTAL = "instrumental", _("Instrumental")
-        OTRO = "otro", _("Otro")
-
     class PosicionPartoChoices(models.TextChoices):
         SEMISENTADA = "semisentada", _("Semisentada")
         SENTADA = "sentada", _("Sentada")
@@ -316,14 +288,9 @@ class Parto(models.Model):
     )
     fecha_hora = models.DateTimeField(_("Fecha y hora del parto"))
     fecha_ingreso = models.DateTimeField(_("Fecha y hora de ingreso"), null=True, blank=True)
-    tipo_parto = models.CharField(
-        _("Tipo de parto (histórico)"),
-        max_length=20,
-        choices=TipoPartoChoices.choices,
-        default=TipoPartoChoices.VAGINAL,
-        help_text=_("Campo legado. Se mantendrá hasta migrar completamente al catálogo REM."),
-    )
-    tipo_parto_catalogo = models.ForeignKey(
+    
+    # CAMBIO: Usamos la FK al catálogo como oficial
+    tipo_parto = models.ForeignKey(
         TipoParto,
         verbose_name=_("Tipo de parto"),
         related_name="episodios",
@@ -333,6 +300,7 @@ class Parto(models.Model):
         db_column="tipo_parto_id",
         help_text=_("Referencia a catálogo nacional de tipos de parto."),
     )
+    
     posicion_parto = models.CharField(
         _("Posición durante el parto"),
         max_length=20,

@@ -1,0 +1,6 @@
+<div class="flex space-x-2 mb-4 overflow-x-auto pb-2">
+    <button onclick="loadChartData('{{ metric }}', 7, '{{ type }}')" class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-days="7">7 días</button>
+    <button onclick="loadChartData('{{ metric }}', 30, '{{ type }}')" class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-days="30">Mes</button>
+    <button onclick="loadChartData('{{ metric }}', 365, '{{ type }}')" class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-days="365">Año</button>
+    <button onclick="loadChartData('{{ metric }}', 'historic', '{{ type }}')" class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-days="historic">Histórico</button>
+</div>
