@@ -2,7 +2,14 @@
         
 <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4 ring-1 ring-white/10">
   <div class="flex h-16 shrink-0 items-center">
-    <img class="h-14 w-auto mt-4" src="{% static "img/logo.svg" %}" alt="Your Company">
+    <a href="{% url 'Home' %}" class="flex items-center gap-3">
+      <img
+        src="{% static 'img/logo_hn.png' %}"
+        alt="Hospital Regional de Ñuble"
+        class="h-10 w-auto object-contain mt-2"
+      />
+      <span class="sr-only">Hospital Regional de Ñuble</span>
+    </a>
   </div>
   {% include "components/navbar/nav.html" %}
 </div>

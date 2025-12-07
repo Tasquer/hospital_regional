@@ -11,8 +11,14 @@
 {% block content %}
   <div class="flex min-h-full flex-col justify-center pt-7 px-2">
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
-      <img class="mx-auto h-28 w-auto" src="{% static "img/logo.svg" %}" alt="mejor ñinez" />
-      <h2 class="mt-4 text-center text-2xl font-bold leading-9 tracking-tight text-gray-400">Iniciar sesión en su cuenta</h2>
+      <div class="flex flex-col items-center mb-4">
+        <img
+          src="{% static 'img/logo_hn.png' %}"
+          alt="Hospital Regional de Ñuble"
+          class="mx-auto h-20 w-auto mb-3 object-contain"
+        />
+        <h2 class="mt-2 text-center text-2xl font-bold leading-9 tracking-tight text-gray-400">Iniciar sesión en su cuenta</h2>
+      </div>
     </div>
     <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
       <div class="bg-white px-6 py-12 shadow rounded-lg sm:px-12 mx-4">
