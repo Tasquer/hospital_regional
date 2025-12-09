@@ -1,5 +1,5 @@
 from django import forms
-from .models import CasoClinico, Paciente, RecienNacido, Parto, Alta, Consultorio, Nacionalidad, PuebloOriginario
+from .models import CasoClinico, Paciente, RecienNacido, Parto, Alta, Consultorio, Nacionalidad, PuebloOriginario, TipoParto
 
 INPUT_CLASS = "w-full rounded-2xl border border-gray-200/70 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400/40"
 CHECKBOX_CLASS = "h-4 w-4 rounded border-white/30 bg-transparent text-indigo-500 focus:ring-indigo-500"
@@ -50,8 +50,7 @@ class PacienteForm(BaseClinicaForm):
         self.fields["pueblo_originario"].empty_label = "Sin adscripción"
 
         ayuda = {
-            "rut": "Ej: 12.345.678-9",
-            "dv": "Dígito verificador (0-9 o K)",
+            "rut": "Ej: 12.345.678-9 (Sin DV aparte)", 
             "telefono": "Ej: +56 9 1234 5678",
             "contacto_emergencia_telefono": "Ej: +56 9 8765 4321",
             "direccion": "Ej: Calle 123, Comuna",
@@ -65,26 +64,35 @@ class PacienteForm(BaseClinicaForm):
     class Meta:
         model = Paciente
         fields = [
-            "rut", "dv", "nombres", "apellido_paterno", "apellido_materno",
+            "rut", "nombres", "apellido_paterno", "apellido_materno", # DV eliminado (HU-7)
             "nombre_completo", "fecha_nacimiento", "sexo", "telefono",
             "email", "direccion", "contacto_emergencia_nombre",
             "contacto_emergencia_telefono", "estado_civil",
             "nivel_educacional", 
             # Campos corregidos (FK directas)
-            "consultorio", "nacionalidad", "pueblo_originario",
+            "consultorio", 
+            # HU-3: Campo 'Otro'
+            "consultorio_otro", 
+            "nacionalidad", 
+            # HU-3: Campo 'Otro'
+            "nacionalidad_otro", 
+            "pueblo_originario",
             "estado_atencion", "riesgo_obstetrico", "activo",
         ]
         widgets = {
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
+            # FIX: Formato de fecha para evitar borrado al editar
+            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}, format='%Y-%m-%d'),
         }
 
     def clean(self):
         cleaned_data = super().clean()
         rut = cleaned_data.get("rut")
+        # Recuperamos campos para validación de duplicados
         apellido_paterno = cleaned_data.get("apellido_paterno")
         apellido_materno = cleaned_data.get("apellido_materno")
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
 
+        # Validación 1: RUT
         if rut:
             qs = Paciente.objects.filter(rut__iexact=rut)
             if self.instance.pk:
@@ -92,6 +100,7 @@ class PacienteForm(BaseClinicaForm):
             if qs.exists():
                 self.add_error("rut", "Ya existe un paciente registrado con este RUT.")
 
+        # Validación 2: Pacientes similares (RESTAURADA)
         criterios_suficientes = apellido_paterno and fecha_nacimiento
         if criterios_suficientes:
             posibles = Paciente.objects.filter(
@@ -105,6 +114,18 @@ class PacienteForm(BaseClinicaForm):
             if posibles.exists():
                 similares = ", ".join(f"{p.nombre_completo or p.full_name} ({p.rut})" for p in posibles[:3])
                 self.add_error(None, f"Existen pacientes similares registrados: {similares}. Verifica antes de guardar.")
+
+        # Validación 3 (HU-3): Validación 'Otro'
+        nacionalidad = cleaned_data.get("nacionalidad")
+        nacionalidad_otro = cleaned_data.get("nacionalidad_otro")
+        
+        if nacionalidad and ("otra" in str(nacionalidad).lower() or "otro" in str(nacionalidad).lower()) and not nacionalidad_otro:
+             self.add_error('nacionalidad_otro', 'Especifique la nacionalidad.')
+        
+        # Validación 4 (HU-4): Automatización Estado Derivado
+        consultorio = cleaned_data.get("consultorio")
+        if consultorio:
+            cleaned_data["estado_atencion"] = Paciente.EstadoAtencionChoices.DERIVADO
 
         return cleaned_data
 
@@ -132,12 +153,20 @@ class PartoForm(BaseClinicaForm):
             "personal_responsable",
         ]
         widgets = {
-            "fecha_hora": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "fecha_ingreso": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            # FIX: Formato de fecha y hora
+            "fecha_hora": forms.DateTimeInput(attrs={"type": "datetime-local"}, format='%Y-%m-%dT%H:%M'),
+            "fecha_ingreso": forms.DateTimeInput(attrs={"type": "datetime-local"}, format='%Y-%m-%dT%H:%M'),
         }
 
     def clean(self):
         cleaned_data = super().clean()
+        
+        # HU-7: Validación Piel con Piel
+        duracion = cleaned_data.get("duracion_contacto_min")
+        if duracion is not None:
+            if duracion < 0 or duracion > 60:
+                self.add_error("duracion_contacto_min", "La duración debe ser entre 0 y 60 minutos.")
+
         required_fields = ["paciente", "fecha_hora", "tipo_parto", "personal_responsable"]
         for field_name in required_fields:
             if not cleaned_data.get(field_name):
@@ -149,6 +178,9 @@ class RecienNacidoForm(BaseClinicaForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["parto"].queryset = Parto.objects.select_related("paciente").order_by("-fecha_hora")
+        
+        # HU-7: Criterio 2 - Ocultar identificador al usuario
+        self.fields['identificador'].widget = forms.HiddenInput()
 
     class Meta:
         model = RecienNacido
@@ -158,7 +190,14 @@ class RecienNacidoForm(BaseClinicaForm):
             "edad_gestacional_semanas", "reanimacion",
             "tiene_malformacion", "malformacion_detalle",
             "condicion_inicial", "derivacion", "diagnostico_alta",
+            # HU-7: Fechas controles
+            "fecha_control_7_dias", "fecha_control_28_dias"
         ]
+        widgets = {
+            # FIX: Formato de fecha
+            "fecha_control_7_dias": forms.DateInput(attrs={"type": "date"}, format='%Y-%m-%d'),
+            "fecha_control_28_dias": forms.DateInput(attrs={"type": "date"}, format='%Y-%m-%d'),
+        }
 
     def clean(self):
         cleaned_data = super().clean()
@@ -194,8 +233,9 @@ class AltaForm(BaseClinicaForm):
             "requiere_seguimiento", "proxima_cita", "observaciones",
         ]
         widgets = {
-            "fecha_alta": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "proxima_cita": forms.DateInput(attrs={"type": "date"}),
+            # FIX: Formatos correctos
+            "fecha_alta": forms.DateTimeInput(attrs={"type": "datetime-local"}, format='%Y-%m-%dT%H:%M'),
+            "proxima_cita": forms.DateInput(attrs={"type": "date"}, format='%Y-%m-%d'),
             "condicion_egreso": forms.Textarea(attrs={"rows": 4}),
             "observaciones": forms.Textarea(attrs={"rows": 3}),
         }

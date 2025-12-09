@@ -36,7 +36,7 @@
       </div>
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {% include 'clinica/pacientes/_campo_form.html' with field=form.rut %}
-        {% include 'clinica/pacientes/_campo_form.html' with field=form.dv %}
+        
         {% include 'clinica/pacientes/_campo_form.html' with field=form.fecha_nacimiento %}
         {% include 'clinica/pacientes/_campo_form.html' with field=form.nombres %}
         {% include 'clinica/pacientes/_campo_form.html' with field=form.apellido_paterno %}
@@ -68,10 +68,25 @@
         <p class="text-sm text-gray-400">Contextualiza el caso y prioridad en la sala.</p>
       </div>
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {% include 'clinica/pacientes/_campo_form.html' with field=form.consultorio %}
-        {% include 'clinica/pacientes/_campo_form.html' with field=form.nacionalidad %}
+        
+        <div class="space-y-2">
+            {% include 'clinica/pacientes/_campo_form.html' with field=form.consultorio %}
+            <div id="div_consultorio_otro" class="hidden pl-2 border-l-2 border-indigo-500/50 mt-1">
+                {% include 'clinica/pacientes/_campo_form.html' with field=form.consultorio_otro %}
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            {% include 'clinica/pacientes/_campo_form.html' with field=form.nacionalidad %}
+            <div id="div_nacionalidad_otro" class="hidden pl-2 border-l-2 border-indigo-500/50 mt-1">
+                {% include 'clinica/pacientes/_campo_form.html' with field=form.nacionalidad_otro %}
+            </div>
+        </div>
+
         {% include 'clinica/pacientes/_campo_form.html' with field=form.pueblo_originario %}
+        
         {% include 'clinica/pacientes/_campo_form.html' with field=form.estado_atencion %}
+        
         {% include 'clinica/pacientes/_campo_form.html' with field=form.riesgo_obstetrico %}
         {% include 'clinica/pacientes/_campo_form.html' with field=form.activo extra_classes='md:col-span-2 lg:col-span-3' %}
       </div>
@@ -88,5 +103,57 @@
   </form>
 
   {% include 'components/mensajes.html' %}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- LÓGICA HU-3: Mostrar campos 'Otro' ---
+        function toggleOther(selectId, divId, trigger) {
+            const select = document.getElementById(selectId);
+            const div = document.getElementById(divId);
+            if(!select || !div) return;
+
+            function check() {
+                const text = select.options[select.selectedIndex].text.toLowerCase();
+                if(text.includes(trigger)) div.classList.remove('hidden');
+                else div.classList.add('hidden');
+            }
+            select.addEventListener('change', check);
+            check();
+        }
+        
+        // --- LÓGICA HU-4: Bloquear estado si es Derivado ---
+        function checkDerivacion() {
+            const consultorioSelect = document.getElementById('id_consultorio');
+            const estadoSelect = document.getElementById('id_estado_atencion');
+            if(!consultorioSelect || !estadoSelect) return;
+
+            function updateState() {
+                if (consultorioSelect.value) {
+                    for (let i = 0; i < estadoSelect.options.length; i++) {
+                        if (estadoSelect.options[i].value === 'derivado') {
+                            estadoSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                    estadoSelect.style.pointerEvents = 'none';
+                    estadoSelect.style.opacity = '0.7';
+                    estadoSelect.setAttribute('readonly', 'readonly');
+                } else {
+                    estadoSelect.style.pointerEvents = 'auto';
+                    estadoSelect.style.opacity = '1';
+                    estadoSelect.removeAttribute('readonly');
+                }
+            }
+            consultorioSelect.addEventListener('change', updateState);
+            updateState(); // Correr al inicio
+        }
+
+        // Ejecutar funciones
+        toggleOther('id_nacionalidad', 'div_nacionalidad_otro', 'otra'); 
+        toggleOther('id_consultorio', 'div_consultorio_otro', 'otro'); 
+        checkDerivacion();
+    });
+  </script>
+
 </section>
 {% endblock content_main %}

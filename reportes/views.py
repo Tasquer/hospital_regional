@@ -9,11 +9,13 @@ from django.views.generic import TemplateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
+# SE AGREGÓ 'Q' A LA IMPORTACIÓN
 from django.db.models import Count, Avg, StdDev, Q
 from django.db.models.functions import TruncDate
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from clinica.models import Paciente, Parto, RecienNacido, TipoParto
+from clinica.models import HistorialPaciente
 
 # --- IMPORTACIÓN SEGURIDAD ---
 from core.mixins import PermitsPositionMixin
@@ -293,3 +295,44 @@ class ExportarReportePDFView(PermitsPositionMixin, ReporteFilterMixin, View):
         response['Content-Disposition'] = 'attachment; filename="Reporte.pdf"'
         pisa.CreatePDF(html, dest=response)
         return response
+    
+
+# --- VISTA AUDITORÍA (MODIFICADA CON BUSCADOR) ---
+class ReporteAuditoriaView(PermitsPositionMixin, TemplateView):
+    template_name = "reportes/auditoria_list.html"
+    permission_required = ['ADMINISTRATIVE', 'TOTAL_ACCESS']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Filtros
+        fecha_inicio = self.request.GET.get('fecha_inicio')
+        fecha_final = self.request.GET.get('fecha_final')
+        search_query = self.request.GET.get('q', '').strip() # <--- BUSCADOR
+        
+        qs = HistorialPaciente.objects.select_related('paciente', 'usuario').all()
+
+        # 1. Filtro por Texto (Nuevo)
+        if search_query:
+            qs = qs.filter(
+                Q(paciente__nombres__icontains=search_query) |
+                Q(paciente__apellido_paterno__icontains=search_query) |
+                Q(paciente__rut__icontains=search_query) |
+                Q(usuario__username__icontains=search_query) |
+                Q(usuario__first_name__icontains=search_query)
+            )
+
+        # 2. Filtro por Fecha
+        if fecha_inicio and fecha_final:
+            try:
+                f_ini = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                f_fin = datetime.strptime(fecha_final, '%Y-%m-%d').date()
+                qs = qs.filter(fecha__date__range=[f_ini, f_fin])
+                context['fecha_inicio'] = fecha_inicio
+                context['fecha_final'] = fecha_final
+            except ValueError:
+                pass
+        
+        context['historial_qs'] = qs[:200]
+        context['q'] = search_query # <--- Para mantener el texto en el input
+        return context

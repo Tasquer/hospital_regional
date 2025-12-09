@@ -106,7 +106,8 @@ class Paciente(models.Model):
         ALTO = "alto", _("Alto")
 
     rut = models.CharField(_("RUT"), max_length=12, unique=True)
-    dv = models.CharField(_("Dígito verificador"), max_length=1, blank=True)
+    # HU-7: Se eliminó el campo 'dv'
+    
     nombres = models.CharField(_("Nombres"), max_length=100, blank=True)
     apellido_paterno = models.CharField(_("Apellido paterno"), max_length=100, blank=True)
     apellido_materno = models.CharField(_("Apellido materno"), max_length=100, blank=True)
@@ -142,6 +143,16 @@ class Paciente(models.Model):
         blank=True,
         db_column="consultorio_id",
     )
+    
+    ### INICIO HU-3: Campo de texto libre para 'Otro' Consultorio ###
+    consultorio_otro = models.CharField(
+        _("Especifique Consultorio"), 
+        max_length=120, 
+        blank=True,
+        help_text=_("Llenar solo si el consultorio no aparece en la lista.")
+    )
+    ### FIN HU-3 ###
+
     registrado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name=_("Registrado por"),
@@ -150,6 +161,18 @@ class Paciente(models.Model):
         null=True,
         blank=True,
     )
+
+    ### INICIO HU-5: Auditoría de cambios ###
+    actualizado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("Actualizado por"),
+        related_name="pacientes_actualizados",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    ### FIN HU-5 ###
+
     nacionalidad = models.ForeignKey(
         Nacionalidad,
         verbose_name=_("Nacionalidad"),
@@ -159,6 +182,16 @@ class Paciente(models.Model):
         blank=True,
         db_column="nacionalidad_codigo",
     )
+
+    ### INICIO HU-3: Campo de texto libre para 'Otra' Nacionalidad ###
+    nacionalidad_otro = models.CharField(
+        _("Especifique Nacionalidad"), 
+        max_length=60, 
+        blank=True,
+        help_text=_("Llenar solo si seleccionó 'Otra' en Nacionalidad.")
+    )
+    ### FIN HU-3 ###
+
     pueblo_originario = models.ForeignKey(
         PuebloOriginario,
         verbose_name=_("Pueblo originario"),
@@ -338,9 +371,15 @@ class Parto(models.Model):
     vih_positivo = models.BooleanField(_("VIH positivo"), default=False)
     complicaciones = models.TextField(_("Complicaciones"), blank=True)
     observaciones = models.TextField(_("Observaciones"), blank=True)
+    
+    # HU-7 FIX: Evitar "Infinito" (Máximo 48 horas = 2880 min)
     duracion_trabajo_parto_min = models.PositiveIntegerField(
-        _("Duración del trabajo de parto (min)"), null=True, blank=True
+        _("Duración del trabajo de parto (min)"), 
+        null=True, 
+        blank=True,
+        validators=[MaxValueValidator(2880)]
     )
+    
     personal_responsable = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name=_("Profesional responsable"),
@@ -397,13 +436,19 @@ class RecienNacido(models.Model):
     )
     identificador = models.CharField(_("Identificador interno"), max_length=20, blank=True)
     sexo = models.CharField(_("Sexo"), max_length=1, choices=SexoChoices.choices)
+    
+    # HU-7 FIX: Límites biológicos razonables (No infinito)
     peso_gramos = models.PositiveIntegerField(
         _("Peso (g)"), validators=[MinValueValidator(400), MaxValueValidator(6500)]
     )
-    talla_cm = models.PositiveIntegerField(_("Talla (cm)"))
-    perimetro_cefalico_cm = models.DecimalField(
-        _("Perímetro cefálico (cm)"), max_digits=4, decimal_places=1, blank=True, null=True
+    talla_cm = models.PositiveIntegerField(
+        _("Talla (cm)"), validators=[MinValueValidator(20), MaxValueValidator(65)]
     )
+    perimetro_cefalico_cm = models.DecimalField(
+        _("Perímetro cefálico (cm)"), max_digits=4, decimal_places=1, blank=True, null=True,
+        validators=[MinValueValidator(15), MaxValueValidator(60)]
+    )
+    
     apgar1 = models.PositiveSmallIntegerField(
         _("APGAR al minuto 1"),
         validators=[MinValueValidator(0), MaxValueValidator(10)],
@@ -422,6 +467,20 @@ class RecienNacido(models.Model):
         null=True,
         blank=True,
     )
+    
+    ### INICIO HU-7: Fechas de controles RN ###
+    fecha_control_7_dias = models.DateField(
+        _("Fecha control 7 días"), 
+        null=True, 
+        blank=True
+    )
+    fecha_control_28_dias = models.DateField(
+        _("Fecha control 28 días"), 
+        null=True, 
+        blank=True
+    )
+    ### FIN HU-7 ###
+
     reanimacion = models.CharField(
         _("Reanimación"), max_length=15, choices=ReanimacionChoices.choices, default=ReanimacionChoices.NINGUNA
     )
@@ -449,6 +508,15 @@ class RecienNacido(models.Model):
             "peso": self.peso_gramos,
             "sexo": sexo,
         }
+    
+    # --- CAMBIO HU-7: Auto-generar Identificador (Backend) ---
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+        if is_new and not self.identificador:
+            # Generamos ID tipo: RN-[ID_PARTO]-[ID_RN]
+            self.identificador = f"RN-{self.parto.id}-{self.pk}"
+            super().save(update_fields=['identificador'])
 
 
 class Alta(models.Model):
@@ -591,3 +659,15 @@ class VistaEstadisticasRnMensual(models.Model):
         db_table = "vista_estadisticas_rn_mensual"
         verbose_name = _("Estadísticas RN mensuales")
         verbose_name_plural = _("Estadísticas RN mensuales")
+
+
+class HistorialPaciente(models.Model):
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='historial')
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    fecha = models.DateTimeField(auto_now_add=True)
+    campo_modificado = models.CharField(max_length=100)
+    valor_anterior = models.TextField(blank=True, null=True)
+    valor_nuevo = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-fecha']

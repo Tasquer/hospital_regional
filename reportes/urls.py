@@ -13,4 +13,6 @@ urlpatterns = [
     # Rutas de exportación
     path("exportar/excel/", views.ExportarReporteExcelView.as_view(), name="exportar_excel"),
     path("exportar/pdf/", views.ExportarReportePDFView.as_view(), name="exportar_pdf"),
+
+    path('auditoria/', views.ReporteAuditoriaView.as_view(), name='auditoria_list'),
 ]

@@ -64,8 +64,8 @@ class PacienteListView(PermitsPositionMixin, ListView):
 
 
 class PacienteCreateView(PermitsPositionMixin, CreateView):
-    # Crear pacientes: Administrativos (Admisión) y Clínicos Full (Médicos/Matronas)
-    permission_required = ['CLINICAL_FULL', 'ADMINISTRATIVE']
+    # Crear pacientes: HU-6 Agregamos CLINICAL_SUPPORT
+    permission_required = ['CLINICAL_FULL', 'ADMINISTRATIVE', 'CLINICAL_SUPPORT']
     
     model = Paciente
     template_name = "clinica/pacientes/formulario.html"
@@ -80,12 +80,17 @@ class PacienteCreateView(PermitsPositionMixin, CreateView):
 
 class PacienteUpdateView(PacienteCreateView, UpdateView):
     # Hereda permisos de PacienteCreateView
-    pass
+    
+    # HU-5: Asignar usuario responsable de la edición
+    def form_valid(self, form):
+        # Inyección para auditoría (Signal)
+        form.instance._usuario_auditoria = self.request.user
+        form.instance.actualizado_por = self.request.user
+        return super().form_valid(form)
 
 
 class PacienteDetailView(PermitsPositionMixin, DetailView):
-    # Ver ficha completa: Solo personal clínico (TENS, Enfermeras, Médicos, Matronas)
-    # Administrativos NO deberían ver detalles clínicos sensibles aquí
+    # Ver ficha completa: Solo personal clínico
     permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
 
     model = Paciente
@@ -181,7 +186,10 @@ class CasoClinicoCreateView(PermitsPositionMixin, CreateView):
 
 
 class CasoClinicoUpdateView(CasoClinicoCreateView, UpdateView):
-    pass
+    def form_valid(self, form):
+        # Inyección para auditoría
+        form.instance._usuario_auditoria = self.request.user
+        return super().form_valid(form)
 
 
 class CasoClinicoDetailView(PermitsPositionMixin, DetailView):
@@ -219,8 +227,8 @@ class PartoListView(PermitsPositionMixin, ListView):
 
 
 class PartoCreateView(PermitsPositionMixin, CreateView):
-    # REGISTRAR PARTO: Acción crítica. Solo Médicos/Matronas.
-    permission_required = ['CLINICAL_FULL']
+    # REGISTRAR PARTO: HU-6 Permitir CLINICAL_SUPPORT
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
     
     model = Parto
     template_name = "clinica/partos/formulario.html"
@@ -242,13 +250,18 @@ class PartoCreateView(PermitsPositionMixin, CreateView):
 
 
 class PartoUpdateView(PermitsPositionMixin, UpdateView):
-    # Editar parto: Solo Médicos/Matronas.
-    permission_required = ['CLINICAL_FULL']
+    # Editar parto: HU-6 Permitir CLINICAL_SUPPORT
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
     
     model = Parto
     template_name = "clinica/partos/formulario.html"
     form_class = PartoForm
     success_url = reverse_lazy("clinica:parto_list")
+
+    def form_valid(self, form):
+        # Inyección para auditoría
+        form.instance._usuario_auditoria = self.request.user
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse("clinica:parto_detail", args=[self.object.pk])
@@ -294,8 +307,8 @@ class RecienNacidoListView(PermitsPositionMixin, ListView):
 
 
 class RecienNacidoCreateView(PermitsPositionMixin, CreateView):
-    # Registrar RN: Solo Médicos/Matronas/Neonatólogos
-    permission_required = ['CLINICAL_FULL']
+    # Registrar RN: HU-6 Permitir CLINICAL_SUPPORT
+    permission_required = ['CLINICAL_FULL', 'CLINICAL_SUPPORT']
     
     model = RecienNacido
     template_name = "clinica/recien_nacidos/formulario.html"
@@ -317,7 +330,10 @@ class RecienNacidoCreateView(PermitsPositionMixin, CreateView):
 
 
 class RecienNacidoUpdateView(RecienNacidoCreateView, UpdateView):
-    pass
+    def form_valid(self, form):
+        # Inyección para auditoría
+        form.instance._usuario_auditoria = self.request.user
+        return super().form_valid(form)
 
 
 class RecienNacidoDetailView(PermitsPositionMixin, DetailView):
@@ -401,13 +417,15 @@ class AltaUpdateView(PermitsPositionMixin, UpdateView):
     form_class = AltaForm
 
     def form_valid(self, form):
-        parto = form.instance.parto
-        if not parto.recien_nacidos.exists():
+        if not form.instance.parto.recien_nacidos.exists():
             form.add_error(None, "No se puede editar el alta porque el parto no tiene recién nacidos.")
             return self.form_invalid(form)
 
         if not form.instance.profesional_responsable:
             form.instance.profesional_responsable = self.request.user
+        
+        # Inyección para auditoría
+        form.instance._usuario_auditoria = self.request.user
 
         messages.success(self.request, "Alta actualizada correctamente.")
         return super().form_valid(form)
